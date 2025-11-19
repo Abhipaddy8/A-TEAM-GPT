@@ -81,6 +81,16 @@ export default {
           busy: "rgb(239 68 68)",
           offline: "rgb(156 163 175)",
         },
+        // A-Team Trades Pipeline brand colors
+        brand: {
+          blue: "hsl(var(--brand-blue) / <alpha-value>)",
+          teal: "hsl(var(--brand-teal) / <alpha-value>)",
+        },
+        traffic: {
+          red: "hsl(var(--traffic-red) / <alpha-value>)",
+          amber: "hsl(var(--traffic-amber) / <alpha-value>)",
+          green: "hsl(var(--traffic-green) / <alpha-value>)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)"],
