@@ -560,7 +560,7 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
         </div>
 
         {/* Input */}
-        {currentStep < 7 && (
+        {currentStep <= 7 && !diagnosticData && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
