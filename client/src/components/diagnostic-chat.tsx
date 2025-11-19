@@ -37,6 +37,7 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
   const [sessionId] = useState(() => crypto.randomUUID());
+  const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -100,6 +101,90 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
     },
   });
 
+  // Calculate score based on answers
+  const calculateScore = (answers: string[]) => {
+    let scores = {
+      tradingCapacity: 5,
+      reliabilityStability: 5,
+      labourAttraction: 5,
+      managementSystems: 5,
+      labourProfitability: 5,
+    };
+
+    // Q1: How many active projects (Trading Capacity)
+    if (answers[0]) {
+      if (answers[0].includes("8+")) scores.tradingCapacity = 9;
+      else if (answers[0].includes("4-7")) scores.tradingCapacity = 7;
+      else scores.tradingCapacity = 5;
+    }
+
+    // Q2: Percentage of reliable subbies (Reliability & Stability)
+    if (answers[1]) {
+      if (answers[1].includes("70-100")) scores.reliabilityStability = 8;
+      else if (answers[1].includes("30-70")) scores.reliabilityStability = 5;
+      else scores.reliabilityStability = 3;
+    }
+
+    // Q3: Struggle to find labour (Labour Attraction)
+    if (answers[2]) {
+      const lower = answers[2].toLowerCase();
+      if (lower.includes("rarely")) scores.labourAttraction = 8;
+      else if (lower.includes("sometimes")) scores.labourAttraction = 5;
+      else scores.labourAttraction = 3;
+    }
+
+    // Q4: Management systems (Management Systems)
+    if (answers[3]) {
+      const lower = answers[3].toLowerCase();
+      if (lower.includes("advanced")) scores.managementSystems = 9;
+      else if (lower.includes("basic") || lower.includes("spreadsheet")) scores.managementSystems = 6;
+      else scores.managementSystems = 3;
+    }
+
+    // Q5: Time spent chasing (affects Reliability and Profitability)
+    if (answers[4]) {
+      if (answers[4].includes("<5")) {
+        scores.labourProfitability += 2;
+        scores.reliabilityStability += 1;
+      } else if (answers[4].includes("5-10")) {
+        scores.labourProfitability += 0;
+      } else {
+        scores.labourProfitability -= 2;
+        scores.reliabilityStability -= 1;
+      }
+    }
+
+    // Q6: Biggest challenge (affects multiple areas)
+    if (answers[5]) {
+      const lower = answers[5].toLowerCase();
+      if (lower.includes("finding")) scores.labourAttraction -= 1;
+      if (lower.includes("reliability")) scores.reliabilityStability -= 1;
+      if (lower.includes("cost")) scores.labourProfitability -= 1;
+    }
+
+    // Clamp scores between 1-10
+    Object.keys(scores).forEach((key) => {
+      scores[key as keyof typeof scores] = Math.max(1, Math.min(10, scores[key as keyof typeof scores]));
+    });
+
+    const overallScore = Math.round(
+      (scores.tradingCapacity +
+        scores.reliabilityStability +
+        scores.labourAttraction +
+        scores.managementSystems +
+        scores.labourProfitability) *
+        2
+    );
+
+    return { scores, overallScore };
+  };
+
+  const getScoreColor = (score: number): "green" | "amber" | "red" => {
+    if (score >= 7) return "green";
+    if (score >= 4) return "amber";
+    return "red";
+  };
+
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -108,8 +193,12 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
+    // Store the answer
+    const newAnswers = [...userAnswers, userMessage];
+    setUserAnswers(newAnswers);
+
     try {
-      // Simulated diagnostic flow - in production, this would call backend
+      // Simulated diagnostic flow
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       if (currentStep < 7) {
@@ -126,7 +215,7 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
           "Question 7: If you could fix ONE thing about your labour pipeline tomorrow, what would it be?",
         ];
 
-        if (nextStep <= 7) {
+        if (nextStep < 7) {
           setMessages((prev) => [
             ...prev,
             {
@@ -134,55 +223,129 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
               content: questions[nextStep - 1],
             },
           ]);
+        } else if (nextStep === 7) {
+          // Show question 7
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: questions[6],
+            },
+          ]);
         }
+      } else if (currentStep === 7) {
+        // After answering question 7, calculate and show results
+        const { scores, overallScore } = calculateScore(newAnswers);
+        const scoreColor = overallScore >= 70 ? "green" : overallScore >= 50 ? "amber" : "red";
 
-        if (nextStep === 7) {
-          // After question 7, show results
-          setTimeout(() => {
-            const mockScoreData: PdfReportData = {
-              email: "builder@example.com",
-              builderName: "Builder",
-              overallScore: 62,
-              scoreColor: "amber",
-              sectionScores: {
-                tradingCapacity: { score: 7, color: "green", commentary: "Strong capacity" },
-                reliabilityStability: { score: 4, color: "red", commentary: "Needs improvement" },
-                labourAttraction: { score: 6, color: "amber", commentary: "Moderate attraction" },
-                managementSystems: { score: 5, color: "amber", commentary: "Basic systems" },
-                labourProfitability: { score: 7, color: "green", commentary: "Good profitability" },
-              },
-              topRecommendations: [
-                {
-                  title: "Fix Subbie Reliability",
-                  explanation: "Implement a tiered payment system",
-                  impact: "£20K-£40K per year",
-                },
-              ],
-              riskProfile: {
-                color: "amber",
-                explanation: "Moderate risk",
-              },
-              labourLeakProjection: {
-                annualLeak: "£45K-£90K",
-                improvementRange: "30-60%",
-                timeHorizon: "60-90 days",
-              },
-            };
+        const scoreData: PdfReportData = {
+          email: "builder@example.com",
+          builderName: "Builder",
+          overallScore,
+          scoreColor,
+          sectionScores: {
+            tradingCapacity: {
+              score: scores.tradingCapacity,
+              color: getScoreColor(scores.tradingCapacity),
+              commentary:
+                scores.tradingCapacity >= 7
+                  ? "Strong project capacity"
+                  : scores.tradingCapacity >= 4
+                    ? "Moderate capacity - room to grow"
+                    : "Limited capacity affecting growth",
+            },
+            reliabilityStability: {
+              score: scores.reliabilityStability,
+              color: getScoreColor(scores.reliabilityStability),
+              commentary:
+                scores.reliabilityStability >= 7
+                  ? "Reliable labour pipeline"
+                  : scores.reliabilityStability >= 4
+                    ? "Moderate reliability issues"
+                    : "Critical reliability problems",
+            },
+            labourAttraction: {
+              score: scores.labourAttraction,
+              color: getScoreColor(scores.labourAttraction),
+              commentary:
+                scores.labourAttraction >= 7
+                  ? "Strong labour attraction"
+                  : scores.labourAttraction >= 4
+                    ? "Moderate attraction challenges"
+                    : "Struggling to attract skilled labour",
+            },
+            managementSystems: {
+              score: scores.managementSystems,
+              color: getScoreColor(scores.managementSystems),
+              commentary:
+                scores.managementSystems >= 7
+                  ? "Advanced management systems"
+                  : scores.managementSystems >= 4
+                    ? "Basic systems in place"
+                    : "No proper systems - causing issues",
+            },
+            labourProfitability: {
+              score: scores.labourProfitability,
+              color: getScoreColor(scores.labourProfitability),
+              commentary:
+                scores.labourProfitability >= 7
+                  ? "Good labour profitability"
+                  : scores.labourProfitability >= 4
+                    ? "Moderate profitability concerns"
+                    : "Poor labour profitability",
+            },
+          },
+          topRecommendations: [
+            {
+              title: scores.reliabilityStability < 5 ? "Fix Subbie Reliability" : "Strengthen Labour Systems",
+              explanation:
+                scores.reliabilityStability < 5
+                  ? "Implement a tiered payment system and reliability tracking"
+                  : "Formalize your labour management processes",
+              impact: "£20K-£40K per year",
+            },
+            {
+              title: scores.managementSystems < 5 ? "Implement Management Software" : "Optimize Current Systems",
+              explanation:
+                scores.managementSystems < 5
+                  ? "Move from spreadsheets to proper labour management software"
+                  : "Fine-tune your existing systems for better efficiency",
+              impact: "£15K-£30K per year",
+            },
+            {
+              title: "Build Labour Pipeline",
+              explanation: "Create a systematic approach to attracting and retaining skilled workers",
+              impact: "£25K-£50K per year",
+            },
+          ],
+          riskProfile: {
+            color: scoreColor,
+            explanation:
+              scoreColor === "red"
+                ? "Critical risk - immediate action required"
+                : scoreColor === "amber"
+                  ? "Moderate risk - improvements needed"
+                  : "Low risk - maintain current systems",
+          },
+          labourLeakProjection: {
+            annualLeak: scoreColor === "red" ? "£60K-£120K" : scoreColor === "amber" ? "£35K-£75K" : "£15K-£35K",
+            improvementRange:
+              scoreColor === "red" ? "£40K-£80K" : scoreColor === "amber" ? "£20K-£50K" : "£10K-£25K",
+            timeHorizon: scoreColor === "red" ? "90-120 days" : scoreColor === "amber" ? "60-90 days" : "30-60 days",
+          },
+        };
 
-            setDiagnosticData(mockScoreData);
+        setDiagnosticData(scoreData);
 
-            setMessages((prev) => [
-              ...prev,
-              {
-                role: "assistant",
-                content:
-                  "Thanks! I've analyzed your responses. Here's your A-Team Trades Pipeline™ Score:",
-                widget: "score-display",
-                data: mockScoreData,
-              },
-            ]);
-          }, 2000);
-        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: "Thanks! I've analyzed your responses. Here's your A-Team Trades Pipeline™ Score:",
+            widget: "score-display",
+            data: scoreData,
+          },
+        ]);
       }
     } catch (error) {
       toast({
