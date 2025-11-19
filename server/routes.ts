@@ -47,26 +47,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
 
-      // 2. Generate Markdown content using GPT-5
-      const markdown = await generateReportMarkdown({
-        ...diagnosticData,
-        email,
-      });
-
-      // 3. Convert Markdown to PDF
+      // 2-6. Generate PDF in background (don't block response)
       const fileName = `ateam-report-${Date.now()}.pdf`;
-      const pdfPath = await generatePDF(markdown, fileName);
-
-      // 4. Upload PDF to Object Storage
-      const pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
-
-      // 5. Update GHL with PDF URL
-      await ghlService.updateCustomFields(contactId, {
-        pdf_url: pdfUrl,
-      });
-
-      // 6. Trigger email workflow in GHL (with PDF attachment)
-      await ghlService.triggerEmailWorkflow(contactId, pdfUrl);
+      const mockPdfUrl = `https://reports.develop-coaching.co.uk/${fileName}`;
+      
+      // Start async PDF generation - don't await
+      (async () => {
+        try {
+          console.log("[API] Starting background PDF generation...");
+          const markdown = await generateReportMarkdown({
+            ...diagnosticData,
+            email,
+          });
+          const pdfPath = await generatePDF(markdown, fileName);
+          const pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
+          
+          await ghlService.updateCustomFields(contactId, {
+            pdf_url: pdfUrl,
+          });
+          
+          await ghlService.triggerEmailWorkflow(contactId, pdfUrl);
+          console.log("[API] Background PDF generation complete:", pdfUrl);
+        } catch (error) {
+          console.error("[API] Background PDF generation failed:", error);
+        }
+      })();
 
       // 7. Create diagnostic session in storage
       await storage.createDiagnosticSession({
@@ -75,17 +80,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         overallScore: diagnosticData.overallScore,
         sectionScores: diagnosticData.sectionScores,
         diagnosticData,
-        pdfUrl,
+        pdfUrl: mockPdfUrl,
         ghlContactId: contactId,
         sessionId,
         phoneOptIn: "false",
         convertedYn: "false",
       });
 
+      console.log("[API] Email submission processed successfully - PDF generating in background");
       res.json({
         success: true,
-        pdf_url: pdfUrl,
-        message: "Report generated and email triggered",
+        message: "Your report will be sent to your email shortly",
       });
     } catch (error) {
       console.error("[API] Error in submit-email:", error);
