@@ -1,0 +1,629 @@
+🚀 MASTER REPLIT PROJECT BRIEF (FULL STACK + GPT + PDF + WIDGETS)
+A-Team Trades Pipeline™ — Diagnostic Web App + GPT Assistant + Automated PDF Backend
+
+🧩 1. PURPOSE
+This project must deliver a complete product, consisting of:
+✔ A public landing page hosting a ChatGPT assistant (ChatGPT SDK + widgets)
+✔ A CustomGPT diagnostic assistant (7-question labour pipeline diagnostic)
+✔ A backend that automates:
+Report generation (Markdown → PDF)
+
+
+Email sending
+
+
+GoHighLevel CRM updates
+
+
+SMS triggers
+
+
+CTA tracking
+
+
+✔ A PDF report generator using GPT-5 content + Markdown
+✔ No custom chat UI — ONLY ChatGPT SDK
+✔ All results presented using GPT Widgets (cards, tables, buttons, panels)
+
+🟦 2. FRONTEND REQUIREMENTS
+2.1 Landing Page
+File: /public/index.html
+The landing page must:
+Use Develop Coaching branding
+
+
+Be minimal and clean
+
+
+Contain a centered chat window
+
+
+Embed ChatGPT using the ChatGPT SDK
+
+
+Support widgets: cards, panels, tables, buttons, file attachments
+
+
+Example (Replit must implement):
+<div id="chat"></div>
+
+<script type="module">
+  import ChatGPT from "https://cdn.jsdelivr.net/npm/@openai/chatgpt-js/dist/chatgpt.js";
+
+  ChatGPT.mount({
+    element: "#chat",
+    model: "gpt-4o-mini",  // or similar
+    widgets: true
+  });
+</script>
+
+2.2 Do NOT
+❌ Do NOT build your own chat UI
+
+
+❌ Do NOT embed secrets in the frontend
+
+
+❌ Do NOT generate PDFs client-side
+
+
+❌ Do NOT use Puppeteer
+
+
+
+🟧 3. BACKEND REQUIREMENTS (Express API)
+Backend must be API only, no UI.
+Directory: /server/
+3.1 Endpoints (Replit MUST implement)
+
+POST /submitEmail
+Triggered when ChatGPT assistant collects the user's email.
+Backend must:
+Validate payload
+
+
+Upsert contact in GoHighLevel
+
+
+Ask GPT-5 to generate full Markdown report using the PDF brief
+
+
+Convert Markdown → PDF using md-to-pdf
+
+
+Upload PDF to S3 (or temporary Replit FS during dev)
+
+
+Email PDF to user
+
+
+Return JSON: { success: true, pdf_url }
+
+
+
+POST /submitPhone
+Backend must:
+Update phone in GHL
+
+
+Tag: Ateam-SMS-OK
+
+
+Trigger SMS (GHL or Twilio)
+
+
+Return JSON success
+
+
+
+GET /visit
+Backend must:
+Accept cid + UTMs
+
+
+Update GHL (converted_YN=true, tag Ateam-Visited-Scale-Session)
+
+
+Redirect to booking page:
+
+
+https://developcoaching.co.uk/schedule-a-call
+
+
+3.2 Do NOT
+❌ No Puppeteer / headless Chrome
+
+
+❌ No plain HTML → PDF rendering
+
+
+❌ No frontend frameworks in backend
+
+
+❌ No multiple report types
+
+
+❌ No storing secrets in repo
+
+
+❌ No long-blocking requests (use async)
+
+
+
+🟪 4. PDF REPORT SPEC (MANDATORY CONTENT REQUIREMENTS)
+Replit MUST implement a PDF generator that:
+✔ Calls GPT-5
+✔ GPT produces Markdown based on the brief below
+✔ Markdown → PDF via md-to-pdf
+✔ Placeholder structure only (1 template)
+✔ Report content must be personalised by GPT
+
+⭐ FULL PDF REPORT BRIEF — REQUIRED CONTENT
+GPT must generate Markdown that is later converted into a PDF.
+
+1. COVER PAGE
+Title:
+ A-Team Trades Pipeline™ Score Report
+
+
+Subtitle:
+ Your personalised labour pipeline diagnostic
+
+
+Builder’s name
+
+
+Date
+
+
+A-Team GPT Logo
+
+
+Develop Coaching colors:
+
+
+Blue #0063FF
+
+
+Teal #00C2C7
+
+
+Black
+
+
+White
+
+
+Greg’s image (URL provided by us)
+
+
+
+2. EXECUTIVE SUMMARY
+Includes:
+Overall score (0–100)
+
+
+Traffic light color (GPT decides):
+
+
+Green 80–100
+
+
+Amber 50–79
+
+
+Red 0–49
+
+
+GPT text block:
+
+
+“Here’s what your score means…”
+
+
+“Here are the 3 biggest issues slowing your projects/profit.”
+
+
+
+3. SECTION SCORES (TRAFFIC LIGHT SYSTEM)
+For each section:
+Score (1–5 or 1–10)
+
+
+Colour (Red/Amber/Green)
+
+
+GPT commentary
+
+
+Sections:
+Trading Capacity
+
+
+Reliability & Stability
+
+
+Labour Attraction Funnel
+
+
+Management & Scheduling Systems
+
+
+Labour Profitability Impact
+
+
+
+4. PERSONALISED RECOMMENDATIONS (TOP 5 FIXES)
+Each fix includes:
+Title
+
+
+One paragraph explanation
+
+
+Expected impact (e.g., “Adds £20K–£50K per year”)
+
+
+
+5. LABOUR RISK PROFILE
+Traffic light meter: RED / AMBER / GREEN
+GPT explains with 3–4 sentences.
+
+6. “IF YOU FIX THIS…” PROJECTION
+GPT generates:
+Estimated annual leak (e.g., “£45K–£90K per year”)
+
+
+Expected improvement range
+
+
+Time horizon (30–90 days)
+
+
+
+7. CALL-TO-ACTION PAGE
+Headline:
+ Fix These Labour Leaks With Greg
+
+
+CTA:
+ “Book your Free Freedom Roadmap Call — I’ll walk you through your score.”
+
+
+Button / Link:
+ https://developcoaching.co.uk/schedule-a-call
+
+
+Branding:
+
+
+Greg photo/headshot
+
+
+Develop Coaching logo
+
+
+A-Team Trades Pipeline GPT badge
+
+
+
+📌 Clarification: ONE Template Only
+There is ONE report format
+
+
+GPT dynamically fills in personalised content
+
+
+Backend uses the same Markdown→PDF conversion every time
+
+
+
+🟥 5. CUSTOM GPT INSTRUCTIONS (Replit MUST Embed)
+Replit must include the entire CustomGPT instructions block from your message inside the ChatGPT SDK init or in your GPT configuration, because:
+The landing page chat will rely on these instructions
+
+
+The diagnostic MUST follow the 7-question logic
+
+
+(Include the entire “CUSTOM GPT BRIEF — A-Team Trades Pipeline™” section you provided.)
+
+🟫 6. PROJECT STRUCTURE
+/public/index.html
+/public/style.css
+/public/chat.js
+
+/server/index.js
+/server/routes/submitEmail.js
+/server/routes/submitPhone.js
+/server/routes/visit.js
+
+/server/utils/gpt.js
+/server/utils/pdf.js
+/server/utils/email.js
+/server/utils/ghl.js
+/server/utils/storage.js
+
+/.env
+/package.json
+
+
+❌ 7. WHAT REPLIT MUST NOT DO
+❌ No Puppeteer
+
+
+❌ No tool-calling or ChatGPT SDK backend logic
+
+
+❌ No custom chat UI — must use ChatGPT SDK widget
+
+
+❌ No app-wide state stored in frontend
+
+
+❌ No random endpoints
+
+
+❌ No hardcoded PDF text
+
+
+❌ No skipping GHL integration
+
+
+❌ No exposing secrets
+
+
+
+🎯 8. GOAL FOR THE COMPLETED PROJECT
+Replit must deliver a system where:
+✔ A builder visits the landing page
+✔ A GPT-driven widget chat runs the diagnostic
+✔ GPT collects email via a form widget
+✔ Backend generates a fully personalised PDF
+✔ PDF emailed + downloadable via chat widget
+✔ GPT collects phone number via widget
+✔ Backend sends SMS
+✔ GPT shows CTA panel with button
+✔ Backend tracks CTA click → updates GHL
+Everything is automated.
+ Everything uses GPT widgets.
+ Everything feels premium and visual.
+
+
+🔵 2️⃣ USER JOURNEY FLOW (End-to-End) — FINAL BRIEF FOR REPLIT
+This section tells Replit exactly how the system behaves when a real user interacts with your GPT on the landing page. It MUST be followed exactly.
+
+🟦 Step 1 — User Enters GPT From Ad or Link
+The user arrives from a UTM-tracked link such as:
+https://developcoaching.co.uk/schedule-a-call/?utm_source=gpt&utm_medium=ai&utm_campaign=a_team_trades_pipeline
+
+The landing page must:
+render your ChatGPT assistant via the ChatGPT SDK
+
+
+pass UTM params into the assistant context
+
+
+display a branded chat window using GPT widgets
+
+
+There is no backend interaction yet.
+
+🟦 Step 2 — GPT Runs the Full 7-Question Diagnostic
+Inside the chat:
+GPT shows Question 1 of 7 (widgets encouraged)
+
+
+User answers
+
+
+GPT moves to next question
+
+
+Continue until all 7 are completed
+
+
+After Question 7:
+GPT internally calculates:
+
+
+Total score (0–100)
+
+
+Section scores
+
+
+R/A/G statuses
+
+
+Labour leak
+
+
+Bottlenecks
+
+
+GPT does NOT reveal internal logic.
+GPT must present the results using widgets, not plain text:
+Cards for section scores
+
+
+Tables for breakdown
+
+
+Panels for insights
+
+
+Badges for R/A/G
+
+
+No PDF.
+ No email yet.
+
+🟦 Step 3 — Email Capture (REQUIRED)
+Once diagnostic results are shown, GPT must say (exact wording):
+“I can send you the full personalised report.
+ Drop your email below and I’ll send it instantly.”
+This must use a Form Widget:
+{
+  "type": "form",
+  "fields": [
+    { "id": "email", "label": "Your Email", "type": "email", "required": true }
+  ],
+  "submit_label": "Send My Report"
+}
+
+Once submitted:
+GPT sends collected email + score + insights to backend via POST /submitEmail.
+
+
+Backend generates PDF + emails it + updates GHL.
+
+
+GPT must then say:
+“Great — I’m generating your PDF now.”
+
+🟦 Step 4 — Phone Number Capture (Optional Bonus)
+After email submission is done AND backend responds successfully:
+GPT must say:
+“I’ve also got a bonus most builders love —
+ I can text you the A-Team Trades Quick Win Pack (3 fast fixes for your labour pipeline).
+ Want it?
+ If yes, drop your mobile number.
+ If not, just type ‘Skip.’”
+If user gives phone:
+GPT calls backend POST /submitPhone
+
+
+Backend:
+
+
+Updates GHL
+
+
+Tags: Ateam-SMS-OK
+
+
+Sends SMS
+
+
+If user types “Skip”:
+GPT skips
+
+
+No backend call
+
+
+
+🟦 Step 5 — GPT Thanks Them + Redirects
+After phone step:
+GPT must say:
+“Your report is on its way.
+ If you want help fixing your score, book a Scale Session call here.”
+Then show a CTA Button Widget:
+{
+  "type": "button",
+  "label": "Book My Scale Session Call",
+  "href": "https://your-backend-url.com/visit?cid={{contact_id}}"
+}
+
+Click result:
+Backend tracks the visit
+
+
+Updates GHL
+
+
+Redirects user to booking link
+
+
+
+🟩 3️⃣ REPORT DELIVERY REQUIREMENTS — FINAL VERSION
+When GPT calls /submitEmail, backend must:
+1. Generate PDF using Markdown from GPT
+Markdown template must include:
+Cover page (title, branding, date, builder name)
+
+
+Executive summary
+
+
+Section traffic-light scoring
+
+
+Commentary for each section
+
+
+Personalised recommendations
+
+
+Labour risk profile
+
+
+Labour-leak projection
+
+
+Final CTA page with branding
+
+
+2. Convert Markdown → PDF using md-to-pdf
+No Puppeteer.
+ No HTML rendering.
+ No CSS complexity.
+3. Email PDF to user
+Subject: Your A-Team Trades Pipeline™ Score Report - SEND IT FROM WIHTIN GHL ONLY
+ Attachment: PDF
+ Optional link: PDF URL
+4. Update GoHighLevel
+Tag: Ateam-GPT
+ Custom fields:
+Score
+
+
+UTM values
+
+
+Phone opt-in
+
+
+PDF link
+
+
+Session ID
+
+
+converted_YN (later)
+
+
+5. Return success to GPT
+Payload:
+{
+  "success": true,
+  "pdf_url": "https://..."
+}
+
+GPT then continues flow.
+
+🎯 This is the exact user-journey specification all layers must follow:
+✔ ChatGPT widget UI for questions
+
+
+✔ Backend for email/PDF/CRM
+
+
+✔ Phone step optional
+
+
+✔ CTA tracking
+
+
+✔ Report PDF generation & email
+
+
+If you want, I can now integrate this user journey into:
+✔ The final FULL Replit brief (merged into one doc)
+✔ The CustomGPT instruction set
+✔ The backend architecture
+✔ The widget-based assistant script
+✔ The Markdown PDF template
+Just say:
+ 👉 “Combine everything into one Replit master spec.”
