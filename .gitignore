@@ -75,3 +75,15 @@ logs
 temp
 tmp
 *.tmp
+
+# Test files and scripts
+test-*.js
+verify-*.js
+check-*.js
+debug-*.png
+test-results/
+playwright-report/
+*.spec.ts.snap
+
+# Server crash prevention docs
+SERVER-CRASH-BUG-PREVENTION.md

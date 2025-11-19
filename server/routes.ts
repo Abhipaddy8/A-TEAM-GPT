@@ -2,17 +2,14 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { GoHighLevelService } from "./utils/ghl";
-import { generateReportMarkdown } from "./utils/openai";
-import { generatePDF } from "./utils/pdf";
-import { StorageService } from "./utils/storage";
+import { generateReportEmailHTML } from "./utils/email-templates";
 import { pdfReportDataSchema, type PdfReportData } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const ghlService = new GoHighLevelService();
-  const storageService = new StorageService();
 
-  // POST /api/submit-email - Generate PDF report and trigger email via GHL
+  // POST /api/submit-email - Send beautiful HTML email report via GHL
   app.post("/api/submit-email", async (req, res) => {
     try {
       // Validate request body
@@ -61,114 +58,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[API] Contact created/updated successfully:", contactId);
 
-      // 2. Generate PDF FIRST (blocking - wait for it to complete)
-      let pdfUrl = `https://reports.develop-coaching.co.uk/ateam-report-${sessionId}.pdf`;
-      try {
-        console.log("[API] Generating PDF report...");
-        const fileName = `ateam-report-${sessionId || Date.now()}.pdf`;
+      // 2. Generate beautiful HTML email with full report
+      console.log("[API] Generating HTML email report...");
+      const reportWithNames = {
+        ...diagnosticData,
+        email,
+        builderName: `${firstName} ${lastName}`,
+      };
 
-        const markdown = await generateReportMarkdown({
-          ...diagnosticData,
-          email,
-          builderName: `${firstName} ${lastName}`,
-        });
-
-        console.log("[API] Markdown generated, creating PDF...");
-        const pdfPath = await generatePDF(markdown, fileName);
-
-        console.log("[API] PDF created, uploading to storage...");
-        pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
-
-        // Update GHL contact with real PDF URL
-        await ghlService.updateCustomFields(contactId, {
-          pdf_url: pdfUrl,
-        });
-
-        console.log("[API] PDF generated and uploaded successfully:", {
-          contactId,
-          pdfUrl,
-        });
-      } catch (pdfError) {
-        console.error("[API] PDF generation failed:", {
-          error: pdfError,
-          contactId,
-          email,
-        });
-        // Continue with email even if PDF fails - user will still get the score info
-      }
-
-      // 3. Send email with actual PDF URL (or fallback URL if PDF failed)
       const emailSubject = `Your A-Team Trades Pipeline™ Report - Score: ${diagnosticData.overallScore}/100`;
-      const emailHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <style>
-            body { font-family: 'Source Sans Pro', 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #005CFF; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
-            .content { background-color: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
-            .score-box { background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .score { font-size: 48px; font-weight: bold; color: #005CFF; }
-            .button { display: inline-block; padding: 14px 28px; background-color: #005CFF; color: white !important; text-decoration: none; border-radius: 8px; margin: 16px 0; font-weight: 600; }
-            .button-secondary { background-color: #62B6FF; }
-            ul { padding-left: 20px; }
-            li { margin-bottom: 8px; }
-            .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin: 0;">Your A-Team Trades Pipeline™ Report</h1>
-            </div>
-            <div class="content">
-              <p>Hi ${firstName},</p>
-              <p>Thank you for completing the A-Team Trades Pipeline diagnostic. Your personalised report is ready!</p>
+      const emailHtml = generateReportEmailHTML(reportWithNames);
 
-              <div class="score-box">
-                <div class="score">${diagnosticData.overallScore}/100</div>
-                <p style="margin: 5px 0 0 0; color: #6b7280;">Your Overall Pipeline Score</p>
-              </div>
+      console.log("[API] HTML email report generated successfully");
 
-              <p style="text-align: center;">
-                <a href="${pdfUrl}" class="button">📄 Download Your Full PDF Report</a>
-              </p>
-
-              <h3>Your Report Includes:</h3>
-              <ul>
-                <li>Complete breakdown of your 7 core pipeline areas</li>
-                <li>Personalised recommendations for improvement</li>
-                <li>Labour leak projection and savings potential</li>
-                <li>Action plan prioritised by business impact</li>
-              </ul>
-
-              <p><strong>Want help fixing your labour pipeline?</strong></p>
-              <p>Book a free Scale Session call with our team to discuss your specific challenges:</p>
-
-              <p style="text-align: center;">
-                <a href="https://developcoaching.co.uk/schedule-a-call?utm_source=${utmSource || 'diagnostic'}&utm_medium=email&utm_campaign=pipeline-report" class="button button-secondary">📞 Book My Scale Session Call</a>
-              </p>
-
-              <p>Best regards,<br><strong>The Develop Coaching Team</strong></p>
-            </div>
-            <div class="footer">
-              <p>Develop Coaching | Helping UK Builders Scale Profitably</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `;
-
+      // 3. Send beautiful HTML email via GHL
       try {
         await ghlService.sendEmail(contactId, email, emailSubject, emailHtml);
-        console.log("[API] Email sent successfully via GHL:", {
+        console.log("[API] ✅ Email sent successfully via GHL:", {
           contactId,
           email,
           subject: emailSubject,
         });
       } catch (emailError) {
-        console.error("[API] Failed to send email via GHL:", {
+        console.error("[API] ❌ Failed to send email via GHL:", {
           error: emailError,
           contactId,
           email,
@@ -176,14 +88,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         throw emailError; // Throw so user knows email failed
       }
 
-      // 7. Create diagnostic session in storage with UTM parameters
+      // 4. Create diagnostic session in storage with UTM parameters
       await storage.createDiagnosticSession({
         email,
         builderName: `${firstName} ${lastName}`,
         overallScore: diagnosticData.overallScore,
         sectionScores: diagnosticData.sectionScores,
         diagnosticData,
-        pdfUrl: mockPdfUrl,
+        pdfUrl: "N/A - HTML Email Report",
         ghlContactId: contactId,
         sessionId,
         phoneOptIn: "false",
@@ -193,10 +105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         utmCampaign,
       });
 
-      console.log("[API] Email submission processed successfully - PDF generating in background");
+      console.log("[API] ✅ Email submission processed successfully - Report sent!");
       res.json({
         success: true,
-        message: "Your report will be sent to your email shortly",
+        message: "Your report has been sent to your email",
       });
     } catch (error) {
       console.error("[API] Error in submit-email:", error);

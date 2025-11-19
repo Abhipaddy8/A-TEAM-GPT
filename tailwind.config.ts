@@ -83,6 +83,11 @@ export default {
         },
         // A-Team Trades Pipeline brand colors
         brand: {
+          'vivid-blue': "hsl(var(--brand-vivid-blue) / <alpha-value>)",
+          'sky-blue': "hsl(var(--brand-sky-blue) / <alpha-value>)",
+          'soft-grey': "hsl(var(--brand-soft-grey) / <alpha-value>)",
+          'charcoal': "hsl(var(--brand-charcoal) / <alpha-value>)",
+          'dark-navy': "hsl(var(--brand-dark-navy) / <alpha-value>)",
           blue: "hsl(var(--brand-blue) / <alpha-value>)",
           teal: "hsl(var(--brand-teal) / <alpha-value>)",
         },

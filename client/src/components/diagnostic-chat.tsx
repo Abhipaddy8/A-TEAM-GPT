@@ -336,8 +336,8 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
         const scoreColor = overallScore >= 70 ? "green" : overallScore >= 50 ? "amber" : "red";
 
         const scoreData: PdfReportData = {
-          email: "builder@example.com",
-          builderName: "Builder",
+          email: "", // Will be filled in when user submits email form
+          builderName: "", // Will be filled in when user submits email form
           overallScore,
           scoreColor,
           sectionScores: {
@@ -608,13 +608,13 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                 {message.widget === "question-options" && message.data && (
                   <div className="mt-6 space-y-3">
                     {message.data.map((option: QuestionOption, optIndex: number) => (
-                      <Button
+                      <button
                         key={optIndex}
-                        variant="outline"
-                        className="w-full justify-start text-left h-auto py-4 px-5 border-2 border-brand-vivid-blue/20 hover:border-brand-vivid-blue hover:bg-brand-vivid-blue transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
+                        type="button"
+                        className="w-full justify-start text-left h-auto py-4 px-5 border-2 border-brand-vivid-blue/20 hover:border-brand-vivid-blue hover:bg-brand-vivid-blue transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group rounded-md bg-white"
                         onClick={() => {
                           setInput(option.label);
-                          handleSend();
+                          setTimeout(() => handleSend(), 50);
                         }}
                         data-testid={`option-${optIndex}`}
                       >
@@ -622,9 +622,9 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                           <div className="w-10 h-10 rounded-full bg-brand-vivid-blue/10 group-hover:bg-white/20 flex items-center justify-center transition-colors shrink-0">
                             <Target className="h-5 w-5 text-brand-vivid-blue group-hover:text-white transition-colors" />
                           </div>
-                          <span className="font-medium text-sm flex-1 group-hover:text-white transition-colors">{option.label}</span>
+                          <span className="font-medium text-sm flex-1 group-hover:text-white transition-colors text-brand-charcoal">{option.label}</span>
                         </div>
-                      </Button>
+                      </button>
                     ))}
                   </div>
                 )}

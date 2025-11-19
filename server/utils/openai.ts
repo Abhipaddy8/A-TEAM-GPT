@@ -118,56 +118,53 @@ Powered by Develop Coaching*`;
 
 export async function generateReportMarkdown(reportData: PdfReportData): Promise<string> {
   console.log("[OpenAI] Generating report markdown for:", reportData.builderName);
-  
+  console.log("[OpenAI] Report data received:", JSON.stringify({
+    email: reportData.email,
+    builderName: reportData.builderName,
+    overallScore: reportData.overallScore,
+    scoreColor: reportData.scoreColor,
+    sectionCount: Object.keys(reportData.sectionScores).length,
+    recommendationsCount: reportData.topRecommendations.length
+  }, null, 2));
+
   // Check if OpenAI is configured
   const hasApiKey = !!(process.env.AI_INTEGRATIONS_OPENAI_API_KEY && process.env.AI_INTEGRATIONS_OPENAI_BASE_URL);
-  
+
   if (!hasApiKey) {
     console.warn("[OpenAI] API keys not configured - using fallback markdown generator");
     return generateFallbackMarkdown(reportData);
   }
 
-  const prompt = `You are generating a professional PDF report for the A-Team Trades Pipeline™ diagnostic.
+  const prompt = `Generate a professional PDF report for ${reportData.builderName}, a UK builder/contractor who just completed the A-Team Trades Pipeline™ diagnostic.
 
-Builder Information:
-- Name: ${reportData.builderName || "Builder"}
-- Email: ${reportData.email}
-- Overall Score: ${reportData.overallScore}/100 (${reportData.scoreColor.toUpperCase()})
+KEY DATA:
+Overall Score: ${reportData.overallScore}/100 (${reportData.scoreColor === "green" ? "GREEN - Good" : reportData.scoreColor === "amber" ? "AMBER - Moderate Risk" : "RED - Critical Issues"})
 
-Section Scores:
+Section Performance:
 ${Object.entries(reportData.sectionScores)
-  .map(
-    ([key, section]) =>
-      `- ${key}: ${section.score}/10 (${section.color.toUpperCase()}) - ${section.commentary}`
-  )
+  .map(([key, section]) => `- ${key.replace(/([A-Z])/g, " $1").trim()}: ${section.score}/10 (${section.color.toUpperCase()}) - ${section.commentary}`)
   .join("\n")}
 
-Top Recommendations:
-${reportData.topRecommendations
-  .map((rec, i) => `${i + 1}. ${rec.title}: ${rec.explanation} (Impact: ${rec.impact})`)
-  .join("\n")}
+Top 3 Issues: ${reportData.topRecommendations.map((r, i) => `${i + 1}) ${r.title}`).join(", ")}
 
-Risk Profile: ${reportData.riskProfile.color.toUpperCase()} - ${reportData.riskProfile.explanation}
+Estimated Annual Labour Leak: ${reportData.labourLeakProjection.annualLeak}
+Potential Savings: ${reportData.labourLeakProjection.improvementRange} (within ${reportData.labourLeakProjection.timeHorizon})
 
-Labour Leak Projection:
-- Annual Leak: ${reportData.labourLeakProjection.annualLeak}
-- Improvement Range: ${reportData.labourLeakProjection.improvementRange}
-- Time Horizon: ${reportData.labourLeakProjection.timeHorizon}
-
-Generate a professional, detailed Markdown report with the following structure:
+INSTRUCTIONS:
+Write a compelling, specific, personalized report in Markdown format using this EXACT structure:
 
 # A-Team Trades Pipeline™ Score Report
 
 **Your Personalised Labour Pipeline Diagnostic**
 
-**Builder:** ${reportData.builderName || "Builder"}  
+**Builder:** ${reportData.builderName || "Builder"}
 **Date:** ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
 
 ---
 
 ## Executive Summary
 
-[Write a personalized 2-3 paragraph summary explaining what the overall score means, the 3 biggest issues, and the potential impact]
+[2-3 punchy paragraphs that: 1) Acknowledge their current situation based on their score, 2) Highlight the 2-3 biggest pain points they're facing, 3) Quantify the money/time they're losing, 4) Give them hope with the potential savings]
 
 ---
 
@@ -175,50 +172,74 @@ Generate a professional, detailed Markdown report with the following structure:
 
 **Status:** ${reportData.scoreColor === "green" ? "EXCELLENT" : reportData.scoreColor === "amber" ? "MODERATE RISK" : "CRITICAL"}
 
-[Explain what this score means in practical terms for their business]
+[1-2 paragraphs explaining what this score means in plain English - use examples like "If you're juggling 6-8 projects, unreliable subbies are probably costing you..."]
 
 ---
 
 ## Section Breakdown
 
-[For each section, create a detailed section with score, traffic light indicator, and detailed commentary]
+${Object.entries(reportData.sectionScores)
+  .map(
+    ([key, section]) => `### ${key.replace(/([A-Z])/g, " $1").trim()}
+
+**Score:** ${section.score}/10 (${section.color.toUpperCase()})
+
+${section.commentary}
+
+${section.color === "red" ? "⚠️ **Priority Area** - This requires immediate attention." : section.color === "amber" ? "⚡ **Improvement Opportunity** - Quick wins available here." : "✅ **Strength** - Keep doing what you're doing."}`
+  )
+  .join("\n\n")}
 
 ---
 
-## Top Recommended Fixes
+## Top 3 Recommended Fixes
 
-[Expand on each recommendation with actionable steps and expected impact]
+${reportData.topRecommendations
+  .map(
+    (rec, i) => `### ${i + 1}. ${rec.title}
+
+**What to do:** ${rec.explanation}
+
+**Potential Impact:** ${rec.impact}
+
+**Why it matters:** [Add 1-2 sentences explaining the real-world impact - delays avoided, cash saved, stress reduced, etc.]`
+  )
+  .join("\n\n")}
 
 ---
 
-## Labour Risk Profile
+## Your Labour Leak Projection
 
-**Risk Level:** ${reportData.riskProfile.color.toUpperCase()}
+**You're currently losing:** ${reportData.labourLeakProjection.annualLeak} per year
 
-[Detailed explanation of the risk profile and what it means]
+This leak comes from:
+- No-shows and last-minute cancellations causing project delays
+- Paying premium rates for emergency labour
+- Time wasted chasing unreliable subbies
+- Projects running over budget due to labour issues
 
----
-
-## Projected Labour Leak
-
-**Estimated Annual Loss:** ${reportData.labourLeakProjection.annualLeak}
-
-[Detailed breakdown of how this leak manifests and what can be recovered]
+**The Good News:** By implementing the fixes above, you could recover **${reportData.labourLeakProjection.improvementRange}** within the next **${reportData.labourLeakProjection.timeHorizon}**.
 
 ---
 
 ## Next Steps
 
-If you want help fixing these labour leaks and improving your score, book a free Freedom Roadmap Call with Greg.
+If you want help fixing these labour leaks and building a reliable pipeline, book a free Scale Session call with our team.
 
 **Book Your Call:** https://developcoaching.co.uk/schedule-a-call
 
 ---
 
-*Report generated by A-Team Trades Pipeline™  
+*Report generated by A-Team Trades Pipeline™
 Powered by Develop Coaching*
 
-Make this report professional, actionable, and motivating. Use UK English spelling and terminology appropriate for UK builders.`;
+STYLE GUIDELINES:
+- Use UK English (labour, not labor; organise, not organize)
+- Be conversational but professional - talk like a business advisor, not a salesperson
+- Use specific examples relevant to UK builders (subbies, trades, projects, etc.)
+- Keep paragraphs short (2-4 sentences max)
+- Focus on practical, actionable insights - no fluff
+- Make them feel understood, then show them the path forward`;
 
   try {
     console.log("[OpenAI] Calling GPT-4o-mini API...");
@@ -234,7 +255,7 @@ Make this report professional, actionable, and motivating. Use UK English spelli
         {
           role: "system",
           content:
-            "You are an expert business consultant specializing in UK construction and trades businesses. Generate professional, actionable PDF reports in Markdown format that help builders identify and fix labour pipeline issues. Use UK English spelling. Be specific, practical, and motivating.",
+            "You are Greg from Develop Coaching, an expert advisor for UK builders and contractors. You understand the daily struggles of managing subbies, juggling projects, and dealing with unreliable labour. Write personalized, practical reports that make builders feel understood and show them a clear path to improvement. Use UK English. Be conversational but professional - like a trusted advisor, not a salesperson.",
         },
         {
           role: "user",
