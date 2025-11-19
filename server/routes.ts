@@ -18,8 +18,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Validate request body
       const bodySchema = z.object({
         email: z.string().email(),
+        firstName: z.string().min(1),
+        lastName: z.string().min(1),
         diagnosticData: pdfReportDataSchema,
         sessionId: z.string().optional(),
+        utmSource: z.string().optional(),
+        utmMedium: z.string().optional(),
+        utmCampaign: z.string().optional(),
       });
 
       const validationResult = bodySchema.safeParse(req.body);
@@ -31,33 +36,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { email, diagnosticData, sessionId } = validationResult.data;
+      const { email, firstName, lastName, diagnosticData, sessionId, utmSource, utmMedium, utmCampaign } = validationResult.data;
 
-      console.log("[API] Processing email submission for:", email);
+      console.log("[API] Processing email submission for:", email, firstName, lastName);
 
       // 1. Create/update GHL contact
+      const customFields: Record<string, any> = {
+        score: diagnosticData.overallScore,
+        session_id: sessionId || crypto.randomUUID(),
+      };
+
+      // Add UTM parameters if present
+      if (utmSource) customFields.utm_source = utmSource;
+      if (utmMedium) customFields.utm_medium = utmMedium;
+      if (utmCampaign) customFields.utm_campaign = utmCampaign;
+
       const contactId = await ghlService.upsertContact({
         email,
-        firstName: diagnosticData.builderName?.split(" ")[0],
-        lastName: diagnosticData.builderName?.split(" ").slice(1).join(" "),
+        firstName,
+        lastName,
         tags: ["Ateam-GPT"],
-        customFields: {
-          score: diagnosticData.overallScore,
-          session_id: req.body.sessionId || crypto.randomUUID(),
-        },
+        customFields,
       });
 
-      // 2-6. Generate PDF in background (don't block response)
+      // 2-6. Generate PDF and send email in background (don't block response)
       const fileName = `ateam-report-${Date.now()}.pdf`;
       const mockPdfUrl = `https://reports.develop-coaching.co.uk/${fileName}`;
       
-      // Start async PDF generation - don't await
+      // Start async PDF generation and email sending - don't await
       (async () => {
         try {
           console.log("[API] Starting background PDF generation...");
           const markdown = await generateReportMarkdown({
             ...diagnosticData,
             email,
+            builderName: `${firstName} ${lastName}`,
           });
           const pdfPath = await generatePDF(markdown, fileName);
           const pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
@@ -66,17 +79,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pdf_url: pdfUrl,
           });
           
-          await ghlService.triggerEmailWorkflow(contactId, pdfUrl);
-          console.log("[API] Background PDF generation complete:", pdfUrl);
+          // Send email via GHL Conversations API with PDF link
+          const emailSubject = `Your A-Team Trades Pipeline™ Report - Score: ${diagnosticData.overallScore}/100`;
+          const emailHtml = `
+            <h1>Your A-Team Trades Pipeline™ Report</h1>
+            <p>Hi ${firstName},</p>
+            <p>Thank you for completing the A-Team Trades Pipeline diagnostic. Your personalised report is ready!</p>
+            <p><strong>Your Overall Score: ${diagnosticData.overallScore}/100</strong></p>
+            <p><strong><a href="${pdfUrl}" style="display:inline-block;padding:12px 24px;background-color:#0063FF;color:white;text-decoration:none;border-radius:6px;margin:16px 0;">Download Your Full PDF Report</a></strong></p>
+            <p>Your detailed PDF report contains:</p>
+            <ul>
+              <li>Complete breakdown of your 7 core pipeline areas</li>
+              <li>Personalised recommendations for improvement</li>
+              <li>Labour leak projection and savings potential</li>
+              <li>Action plan prioritised by business impact</li>
+            </ul>
+            <p>If you'd like help implementing these improvements, book a Scale Session call with us:</p>
+            <p><a href="https://developcoaching.co.uk/schedule-a-call" style="display:inline-block;padding:12px 24px;background-color:#00C2C7;color:white;text-decoration:none;border-radius:6px;margin:16px 0;">Book My Scale Session Call</a></p>
+            <p>Best regards,<br>The Develop Coaching Team</p>
+          `;
+          
+          try {
+            await ghlService.sendEmail(contactId, email, emailSubject, emailHtml);
+            console.log("[API] Background email sent successfully:", {
+              contactId,
+              email,
+              pdfUrl,
+              subject: emailSubject,
+            });
+          } catch (emailError) {
+            console.error("[API] Failed to send email via GHL:", {
+              error: emailError,
+              contactId,
+              email,
+              pdfUrl,
+            });
+            throw emailError;
+          }
         } catch (error) {
-          console.error("[API] Background PDF generation failed:", error);
+          console.error("[API] Background PDF generation/email failed:", {
+            error,
+            contactId,
+            email,
+            fileName,
+          });
         }
       })();
 
-      // 7. Create diagnostic session in storage
+      // 7. Create diagnostic session in storage with UTM parameters
       await storage.createDiagnosticSession({
         email,
-        builderName: diagnosticData.builderName,
+        builderName: `${firstName} ${lastName}`,
         overallScore: diagnosticData.overallScore,
         sectionScores: diagnosticData.sectionScores,
         diagnosticData,
@@ -85,6 +138,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         sessionId,
         phoneOptIn: "false",
         convertedYn: "false",
+        utmSource,
+        utmMedium,
+        utmCampaign,
       });
 
       console.log("[API] Email submission processed successfully - PDF generating in background");
@@ -108,6 +164,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const bodySchema = z.object({
         phone: z.string().min(10),
         email: z.string().email(),
+        sessionId: z.string().optional(),
+        utmSource: z.string().optional(),
+        utmMedium: z.string().optional(),
+        utmCampaign: z.string().optional(),
       });
 
       const validationResult = bodySchema.safeParse(req.body);
@@ -119,7 +179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { phone, email } = validationResult.data;
+      const { phone, email, utmSource, utmMedium, utmCampaign } = validationResult.data;
 
       console.log("[API] Processing phone submission for:", email);
 
@@ -129,24 +189,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Session not found" });
       }
 
-      // 2. Update GHL contact with phone
-      if (session.ghlContactId) {
-        await ghlService.updateCustomFields(session.ghlContactId, { phone });
-        await ghlService.addTags(session.ghlContactId, ["Ateam-SMS-OK"]);
+      // 2. Build merged UTM parameters (stored session UTMs + fresh request UTMs)
+      const customFields: Record<string, any> = {};
+      
+      // First, use stored session UTMs as fallback
+      if (session.utmSource) customFields.utm_source = session.utmSource;
+      if (session.utmMedium) customFields.utm_medium = session.utmMedium;
+      if (session.utmCampaign) customFields.utm_campaign = session.utmCampaign;
+      
+      // Then override with fresh request UTMs if present (priority)
+      if (utmSource) customFields.utm_source = utmSource;
+      if (utmMedium) customFields.utm_medium = utmMedium;
+      if (utmCampaign) customFields.utm_campaign = utmCampaign;
 
-        // 3. Trigger SMS workflow in GHL
-        await ghlService.triggerSMSWorkflow(session.ghlContactId);
+      // 3. Update GHL contact with phone number and UTM parameters (via upsertContact to update standard phone field)
+      if (session.ghlContactId) {
+
+        // Lookup contact to get firstName/lastName for upsert
+        const contactId = await ghlService.upsertContact({
+          email,
+          phone,
+          tags: ["Ateam-SMS-OK"],
+          customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
+        });
+
+        // 4. Send Quick Win Pack SMS via GHL Conversations API
+        const smsMessage = `Hi! Your A-Team Trades Quick Win Pack is ready:
+
+#1 RELIABILITY FIX: Text your top 3 subbies this: "Rate yourself 1-10 on reliability. What would make you a 10?"
+
+#2 PIPELINE FIX: Post one Facebook ad: "Reliable tradie needed. £X/day. DM if you show up on time."
+
+#3 RETENTION FIX: Ask your best subbie: "What nearly made you quit? How can I fix it?"
+
+These 3 fixes take 20 mins but save £15K-35K/year in labour leaks.
+
+Want help scaling? Book here: https://developcoaching.co.uk/schedule-a-call
+
+- Develop Coaching Team`;
+
+        try {
+          await ghlService.sendSMS(contactId, phone, smsMessage);
+          console.log("[API] SMS sent successfully to:", phone);
+        } catch (smsError) {
+          console.error("[API] Failed to send SMS:", {
+            error: smsError,
+            contactId,
+            phone,
+            messageLength: smsMessage.length,
+          });
+          throw smsError;
+        }
       }
 
-      // 4. Update session
+      // 5. Update session with phone and persist merged UTM values
       await storage.updateDiagnosticSession(session.id, {
         phone,
         phoneOptIn: "true",
+        utmSource: customFields.utm_source || session.utmSource || undefined,
+        utmMedium: customFields.utm_medium || session.utmMedium || undefined,
+        utmCampaign: customFields.utm_campaign || session.utmCampaign || undefined,
       });
 
       res.json({
         success: true,
-        message: "Phone updated and SMS triggered",
+        message: "Phone updated and SMS sent",
       });
     } catch (error) {
       console.error("[API] Error in submit-phone:", error);
@@ -179,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ).filter((s: any) => s.sessionId === sessionId);
 
         if (sessions.length > 0) {
-          const session = sessions[0];
+          const session: any = sessions[0];
           if (session.ghlContactId) {
             await ghlService.markConverted(session.ghlContactId, {
               utm_source,

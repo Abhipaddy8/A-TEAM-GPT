@@ -53,10 +53,27 @@ export class MemStorage implements IStorage {
   ): Promise<DiagnosticSession> {
     const id = randomUUID();
     const session: DiagnosticSession = {
+      phone: null,
+      builderName: null,
+      pdfUrl: null,
+      ghlContactId: null,
+      utmSource: null,
+      utmMedium: null,
+      utmCampaign: null,
+      sessionId: null,
+      phoneOptIn: "false",
+      convertedYn: "false",
       ...insertSession,
       id,
       createdAt: new Date(),
     };
+    console.log('[Storage] Creating diagnostic session with UTM:', {
+      id,
+      email: session.email,
+      utmSource: session.utmSource,
+      utmMedium: session.utmMedium,
+      utmCampaign: session.utmCampaign,
+    });
     this.diagnosticSessions.set(id, session);
     return session;
   }
@@ -72,15 +89,40 @@ export class MemStorage implements IStorage {
     const session = this.diagnosticSessions.get(id);
     if (!session) return undefined;
 
-    const updatedSession = { ...session, ...updates };
+    // Only update fields that are explicitly provided (not undefined)
+    const updatedSession = { ...session };
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value !== undefined) {
+        updatedSession[key as keyof DiagnosticSession] = value as any;
+      }
+    });
+    
+    console.log('[Storage] Updating diagnostic session:', {
+      id,
+      updates: Object.keys(updates),
+      utmPreserved: {
+        utmSource: updatedSession.utmSource,
+        utmMedium: updatedSession.utmMedium,
+        utmCampaign: updatedSession.utmCampaign,
+      },
+    });
+    
     this.diagnosticSessions.set(id, updatedSession);
     return updatedSession;
   }
 
   async getDiagnosticSessionByEmail(email: string): Promise<DiagnosticSession | undefined> {
-    return Array.from(this.diagnosticSessions.values()).find(
+    const session = Array.from(this.diagnosticSessions.values()).find(
       (session) => session.email === email
     );
+    console.log('[Storage] Retrieved diagnostic session by email:', {
+      email,
+      found: !!session,
+      utmSource: session?.utmSource,
+      utmMedium: session?.utmMedium,
+      utmCampaign: session?.utmCampaign,
+    });
+    return session;
   }
 }
 

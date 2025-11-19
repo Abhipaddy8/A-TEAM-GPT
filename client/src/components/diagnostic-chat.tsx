@@ -38,6 +38,11 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   const [diagnosticData, setDiagnosticData] = useState<any>(null);
   const [sessionId] = useState(() => crypto.randomUUID());
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
+  const [utmParams, setUtmParams] = useState<{
+    utmSource?: string;
+    utmMedium?: string;
+    utmCampaign?: string;
+  }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -49,9 +54,51 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Capture UTM parameters from URL on mount and persist to sessionStorage
+    const searchParams = new URLSearchParams(window.location.search);
+    const params: any = {};
+    
+    // First try to load from sessionStorage
+    const storedUtm = sessionStorage.getItem('utm_params');
+    if (storedUtm) {
+      try {
+        const parsed = JSON.parse(storedUtm);
+        Object.assign(params, parsed);
+        console.log('[UTM] Loaded from sessionStorage:', params);
+      } catch (e) {
+        console.error('[UTM] Failed to parse stored params:', e);
+      }
+    }
+    
+    // Then override with any new URL params (if present)
+    if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
+    if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
+    if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
+    
+    if (Object.keys(params).length > 0) {
+      console.log('[UTM] Captured parameters:', params);
+      // Persist to sessionStorage for later forms
+      sessionStorage.setItem('utm_params', JSON.stringify(params));
+      setUtmParams(params);
+    }
+  }, []);
+
   const submitEmailMutation = useMutation({
-    mutationFn: async (data: { email: string; diagnosticData: any }) => {
-      return apiRequest("POST", "/api/submit-email", data);
+    mutationFn: async (data: { 
+      email: string; 
+      firstName: string; 
+      lastName: string; 
+      diagnosticData: any;
+      utmSource?: string;
+      utmMedium?: string;
+      utmCampaign?: string;
+    }) => {
+      return apiRequest("POST", "/api/submit-email", {
+        ...data,
+        sessionId,
+        ...utmParams,
+      });
     },
     onSuccess: (data: any) => {
       setMessages((prev) => [
@@ -75,7 +122,22 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
 
   const submitPhoneMutation = useMutation({
     mutationFn: async (data: { phone: string; email: string }) => {
-      return apiRequest("POST", "/api/submit-phone", data);
+      // Include UTM parameters from sessionStorage
+      const storedUtm = sessionStorage.getItem('utm_params');
+      let utmData = {};
+      if (storedUtm) {
+        try {
+          utmData = JSON.parse(storedUtm);
+        } catch (e) {
+          console.error('[UTM] Failed to parse stored params for phone submission:', e);
+        }
+      }
+      
+      return apiRequest("POST", "/api/submit-phone", {
+        ...data,
+        sessionId,
+        ...utmData,
+      });
     },
     onSuccess: () => {
       setMessages((prev) => [
@@ -361,12 +423,14 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   const handleEmailSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
     const email = formData.get("email") as string;
 
-    if (!email || !diagnosticData) return;
+    if (!email || !firstName || !lastName || !diagnosticData) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: email }]);
-    submitEmailMutation.mutate({ email, diagnosticData });
+    setMessages((prev) => [...prev, { role: "user", content: `${firstName} ${lastName} - ${email}` }]);
+    submitEmailMutation.mutate({ email, firstName, lastName, diagnosticData });
   };
 
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -453,16 +517,46 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
 
                 {message.widget === "email-form" && (
                   <form onSubmit={handleEmailSubmit} className="mt-4 space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="firstName" className="text-foreground">
+                          First Name
+                        </Label>
+                        <Input
+                          id="firstName"
+                          name="firstName"
+                          type="text"
+                          required
+                          placeholder="John"
+                          className="mt-1"
+                          data-testid="input-firstName"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="lastName" className="text-foreground">
+                          Last Name
+                        </Label>
+                        <Input
+                          id="lastName"
+                          name="lastName"
+                          type="text"
+                          required
+                          placeholder="Smith"
+                          className="mt-1"
+                          data-testid="input-lastName"
+                        />
+                      </div>
+                    </div>
                     <div>
                       <Label htmlFor="email" className="text-foreground">
-                        Your Email
+                        Email Address
                       </Label>
                       <Input
                         id="email"
                         name="email"
                         type="email"
                         required
-                        placeholder="builder@example.com"
+                        placeholder="john.smith@example.com"
                         className="mt-1"
                         data-testid="input-email"
                       />
