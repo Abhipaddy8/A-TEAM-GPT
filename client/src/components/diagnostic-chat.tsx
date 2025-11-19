@@ -16,7 +16,7 @@ import type { PdfReportData } from "@shared/schema";
 interface Message {
   role: "assistant" | "user";
   content: string;
-  widget?: "score-display" | "email-form" | "phone-form" | "cta-button" | "question-options";
+  widget?: "score-display" | "email-form" | "phone-form" | "cta-button" | "question-options" | "start-button";
   data?: any;
 }
 
@@ -118,6 +118,7 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
       role: "assistant",
       content:
         "Hi! I'm the A-Team Trades Pipeline assistant. I'll ask you 7 quick questions about your labour pipeline. Let's discover where you're losing money.\n\nReady to start?",
+      widget: "start-button",
     },
   ]);
   const [input, setInput] = useState("");
@@ -745,6 +746,32 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                   </div>
                 )}
 
+                {message.widget === "start-button" && (
+                  <div className="mt-6">
+                    <Button
+                      onClick={() => {
+                        setCurrentStep(1);
+                        setMessages((prev) => [
+                          ...prev,
+                          { role: "user", content: "Let's start!" },
+                          {
+                            role: "assistant",
+                            content: `Question ${DIAGNOSTIC_QUESTIONS[0].id}: ${DIAGNOSTIC_QUESTIONS[0].question}`,
+                            widget: "question-options",
+                            data: DIAGNOSTIC_QUESTIONS[0].options,
+                          },
+                        ]);
+                      }}
+                      className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue hover:from-brand-vivid-blue/90 hover:to-brand-sky-blue/90 text-white font-bold py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+                      data-testid="button-start-diagnostic"
+                    >
+                      <Zap className="h-6 w-6 mr-3 group-hover:rotate-12 transition-transform" />
+                      Start Diagnostic
+                      <Sparkles className="h-6 w-6 ml-3 group-hover:rotate-12 transition-transform" />
+                    </Button>
+                  </div>
+                )}
+
                 {message.widget === "cta-button" && message.data && (
                   <div className="mt-6">
                     <a
@@ -783,19 +810,33 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input */}
-        {currentStep <= 7 && !diagnosticData && (
+        {/* Input - Only show when initial greeting, not during diagnostic */}
+        {currentStep === 0 && !diagnosticData && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              handleSend();
+              const inputLower = input.trim().toLowerCase();
+              if (inputLower.includes('yes') || inputLower.includes('ready') || inputLower.includes('start') || inputLower.includes('ok') || inputLower.includes('sure') || inputLower.includes('go')) {
+                setCurrentStep(1);
+                setMessages((prev) => [
+                  ...prev,
+                  { role: "user", content: input },
+                  {
+                    role: "assistant",
+                    content: `Question ${DIAGNOSTIC_QUESTIONS[0].id}: ${DIAGNOSTIC_QUESTIONS[0].question}`,
+                    widget: "question-options",
+                    data: DIAGNOSTIC_QUESTIONS[0].options,
+                  },
+                ]);
+                setInput("");
+              }
             }}
             className="flex gap-2"
           >
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your answer..."
+              placeholder="Type 'Yes' or 'OK' to begin..."
               disabled={isLoading}
               className="flex-1"
               data-testid="input-chat"
