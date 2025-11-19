@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 const GHL_BASE_URL = "https://services.leadconnectorhq.com";
 const locationId = process.env.GHL_DEVELOP_LOCATION_ID;
 const pitToken = process.env.GHL_DEVELOP_PIT_ID;

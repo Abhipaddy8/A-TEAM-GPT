@@ -43,22 +43,32 @@ export const pdfReportDataSchema = z.object({
       color: z.enum(['red', 'amber', 'green']),
       commentary: z.string(),
     }),
-    reliabilityStability: z.object({
+    reliability: z.object({
       score: z.number(),
       color: z.enum(['red', 'amber', 'green']),
       commentary: z.string(),
     }),
-    labourAttraction: z.object({
+    recruitment: z.object({
       score: z.number(),
       color: z.enum(['red', 'amber', 'green']),
       commentary: z.string(),
     }),
-    managementSystems: z.object({
+    systems: z.object({
       score: z.number(),
       color: z.enum(['red', 'amber', 'green']),
       commentary: z.string(),
     }),
-    labourProfitability: z.object({
+    profitability: z.object({
+      score: z.number(),
+      color: z.enum(['red', 'amber', 'green']),
+      commentary: z.string(),
+    }),
+    onboarding: z.object({
+      score: z.number(),
+      color: z.enum(['red', 'amber', 'green']),
+      commentary: z.string(),
+    }),
+    culture: z.object({
       score: z.number(),
       color: z.enum(['red', 'amber', 'green']),
       commentary: z.string(),

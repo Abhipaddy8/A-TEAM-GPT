@@ -16,13 +16,101 @@ import type { PdfReportData } from "@shared/schema";
 interface Message {
   role: "assistant" | "user";
   content: string;
-  widget?: "score-display" | "email-form" | "phone-form" | "cta-button";
+  widget?: "score-display" | "email-form" | "phone-form" | "cta-button" | "question-options";
   data?: any;
 }
 
 interface DiagnosticChatProps {
   onBack: () => void;
 }
+
+interface QuestionOption {
+  label: string;
+  value: string;
+  score?: number; // Optional direct score mapping
+}
+
+interface DiagnosticQuestion {
+  id: number;
+  question: string;
+  options: QuestionOption[];
+  section: string;
+}
+
+// Define diagnostic questions with multiple-choice options
+const DIAGNOSTIC_QUESTIONS: DiagnosticQuestion[] = [
+  {
+    id: 1,
+    question: "How many active projects do you typically run at once?",
+    section: "tradingCapacity",
+    options: [
+      { label: "1-3 projects", value: "1-3", score: 5 },
+      { label: "4-7 projects", value: "4-7", score: 7 },
+      { label: "8+ projects", value: "8+", score: 9 },
+    ],
+  },
+  {
+    id: 2,
+    question: "What percentage of your subbies show up on time and finish when promised?",
+    section: "reliability",
+    options: [
+      { label: "0-30% (Major reliability issues)", value: "0-30%", score: 3 },
+      { label: "30-70% (Some reliability issues)", value: "30-70%", score: 5 },
+      { label: "70-100% (Mostly reliable)", value: "70-100%", score: 8 },
+    ],
+  },
+  {
+    id: 3,
+    question: "How often do you struggle to find skilled labour when you need it?",
+    section: "recruitment",
+    options: [
+      { label: "Always - it's a constant battle", value: "Always", score: 3 },
+      { label: "Sometimes - hit or miss", value: "Sometimes", score: 5 },
+      { label: "Rarely - I have a good pipeline", value: "Rarely", score: 8 },
+    ],
+  },
+  {
+    id: 4,
+    question: "Do you have a clear system for scheduling and managing your labour?",
+    section: "systems",
+    options: [
+      { label: "No system - it's all in my head", value: "No system", score: 3 },
+      { label: "Basic spreadsheets or notes", value: "Basic spreadsheets", score: 6 },
+      { label: "Advanced software/project management tools", value: "Advanced software", score: 9 },
+    ],
+  },
+  {
+    id: 5,
+    question: "How much time do you spend each week chasing subbies or fixing labour issues?",
+    section: "profitability",
+    options: [
+      { label: "10+ hours per week", value: "10+ hours", score: 3 },
+      { label: "5-10 hours per week", value: "5-10 hours", score: 5 },
+      { label: "Less than 5 hours per week", value: "<5 hours", score: 8 },
+    ],
+  },
+  {
+    id: 6,
+    question: "What's the biggest challenge you face with your labour pipeline?",
+    section: "onboarding",
+    options: [
+      { label: "Finding workers", value: "Finding workers", score: 4 },
+      { label: "Reliability and no-shows", value: "Reliability", score: 4 },
+      { label: "Cost management", value: "Cost management", score: 5 },
+      { label: "Quality issues", value: "Quality issues", score: 5 },
+    ],
+  },
+  {
+    id: 7,
+    question: "How would you rate your team morale and culture?",
+    section: "culture",
+    options: [
+      { label: "Poor - high turnover, low morale", value: "Poor", score: 3 },
+      { label: "Average - could be better", value: "Average", score: 5 },
+      { label: "Good - team is engaged and stable", value: "Good", score: 8 },
+    ],
+  },
+];
 
 export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   const [messages, setMessages] = useState<Message[]>([
@@ -163,80 +251,38 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
     },
   });
 
-  // Calculate score based on answers
+  // Calculate score based on answers - now uses all 7 questions!
   const calculateScore = (answers: string[]) => {
+    // Initialize scores for all 7 sections
     let scores = {
       tradingCapacity: 5,
-      reliabilityStability: 5,
-      labourAttraction: 5,
-      managementSystems: 5,
-      labourProfitability: 5,
+      reliability: 5,
+      recruitment: 5,
+      systems: 5,
+      profitability: 5,
+      onboarding: 5,
+      culture: 5,
     };
 
-    // Q1: How many active projects (Trading Capacity)
-    if (answers[0]) {
-      if (answers[0].includes("8+")) scores.tradingCapacity = 9;
-      else if (answers[0].includes("4-7")) scores.tradingCapacity = 7;
-      else scores.tradingCapacity = 5;
-    }
+    // Extract scores from each answer by matching against question options
+    DIAGNOSTIC_QUESTIONS.forEach((question, index) => {
+      const answer = answers[index];
+      if (answer) {
+        // Find the option that matches this answer
+        const matchedOption = question.options.find(opt =>
+          answer.includes(opt.value) || answer.includes(opt.label)
+        );
 
-    // Q2: Percentage of reliable subbies (Reliability & Stability)
-    if (answers[1]) {
-      if (answers[1].includes("70-100")) scores.reliabilityStability = 8;
-      else if (answers[1].includes("30-70")) scores.reliabilityStability = 5;
-      else scores.reliabilityStability = 3;
-    }
-
-    // Q3: Struggle to find labour (Labour Attraction)
-    if (answers[2]) {
-      const lower = answers[2].toLowerCase();
-      if (lower.includes("rarely")) scores.labourAttraction = 8;
-      else if (lower.includes("sometimes")) scores.labourAttraction = 5;
-      else scores.labourAttraction = 3;
-    }
-
-    // Q4: Management systems (Management Systems)
-    if (answers[3]) {
-      const lower = answers[3].toLowerCase();
-      if (lower.includes("advanced")) scores.managementSystems = 9;
-      else if (lower.includes("basic") || lower.includes("spreadsheet")) scores.managementSystems = 6;
-      else scores.managementSystems = 3;
-    }
-
-    // Q5: Time spent chasing (affects Reliability and Profitability)
-    if (answers[4]) {
-      if (answers[4].includes("<5")) {
-        scores.labourProfitability += 2;
-        scores.reliabilityStability += 1;
-      } else if (answers[4].includes("5-10")) {
-        scores.labourProfitability += 0;
-      } else {
-        scores.labourProfitability -= 2;
-        scores.reliabilityStability -= 1;
+        if (matchedOption && matchedOption.score) {
+          scores[question.section as keyof typeof scores] = matchedOption.score;
+        }
       }
-    }
-
-    // Q6: Biggest challenge (affects multiple areas)
-    if (answers[5]) {
-      const lower = answers[5].toLowerCase();
-      if (lower.includes("finding")) scores.labourAttraction -= 1;
-      if (lower.includes("reliability")) scores.reliabilityStability -= 1;
-      if (lower.includes("cost")) scores.labourProfitability -= 1;
-    }
-
-    // Clamp scores between 1-10
-    Object.keys(scores).forEach((key) => {
-      scores[key as keyof typeof scores] = Math.max(1, Math.min(10, scores[key as keyof typeof scores]));
     });
 
-    const overallScore = Math.round(
-      (scores.tradingCapacity +
-        scores.reliabilityStability +
-        scores.labourAttraction +
-        scores.managementSystems +
-        scores.labourProfitability) *
-        2
-    );
+    // Calculate overall score (average of all sections * 10 to get 0-100 scale)
+    const sectionValues = Object.values(scores);
+    const averageScore = sectionValues.reduce((sum, score) => sum + score, 0) / sectionValues.length;
+    const overallScore = Math.round(averageScore * 10);
 
     return { scores, overallScore };
   };
@@ -267,31 +313,15 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
         const nextStep = currentStep + 1;
         setCurrentStep(nextStep);
 
-        const questions = [
-          "Question 1: How many active projects do you typically run at once? (1-3, 4-7, 8+)",
-          "Question 2: What percentage of your subbies show up on time and finish when promised? (0-30%, 30-70%, 70-100%)",
-          "Question 3: How often do you struggle to find skilled labour when you need it? (Always, Sometimes, Rarely)",
-          "Question 4: Do you have a clear system for scheduling and managing your labour? (No system, Basic spreadsheets, Advanced software)",
-          "Question 5: How much time do you spend each week chasing subbies or fixing labour issues? (10+ hours, 5-10 hours, <5 hours)",
-          "Question 6: What's your biggest labour challenge right now? (Finding workers, Reliability, Cost management, Quality issues)",
-          "Question 7: If you could fix ONE thing about your labour pipeline tomorrow, what would it be?",
-        ];
-
-        if (nextStep < 7) {
+        if (nextStep <= 7) {
+          const currentQuestion = DIAGNOSTIC_QUESTIONS[nextStep - 1];
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              content: questions[nextStep - 1],
-            },
-          ]);
-        } else if (nextStep === 7) {
-          // Show question 7
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: questions[6],
+              content: `Question ${currentQuestion.id}: ${currentQuestion.question}`,
+              widget: "question-options",
+              data: currentQuestion.options,
             },
           ]);
         }
@@ -316,67 +346,90 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                     ? "Moderate capacity - room to grow"
                     : "Limited capacity affecting growth",
             },
-            reliabilityStability: {
-              score: scores.reliabilityStability,
-              color: getScoreColor(scores.reliabilityStability),
+            reliability: {
+              score: scores.reliability,
+              color: getScoreColor(scores.reliability),
               commentary:
-                scores.reliabilityStability >= 7
+                scores.reliability >= 7
                   ? "Reliable labour pipeline"
-                  : scores.reliabilityStability >= 4
+                  : scores.reliability >= 4
                     ? "Moderate reliability issues"
                     : "Critical reliability problems",
             },
-            labourAttraction: {
-              score: scores.labourAttraction,
-              color: getScoreColor(scores.labourAttraction),
+            recruitment: {
+              score: scores.recruitment,
+              color: getScoreColor(scores.recruitment),
               commentary:
-                scores.labourAttraction >= 7
-                  ? "Strong labour attraction"
-                  : scores.labourAttraction >= 4
-                    ? "Moderate attraction challenges"
+                scores.recruitment >= 7
+                  ? "Strong recruitment pipeline"
+                  : scores.recruitment >= 4
+                    ? "Moderate recruitment challenges"
                     : "Struggling to attract skilled labour",
             },
-            managementSystems: {
-              score: scores.managementSystems,
-              color: getScoreColor(scores.managementSystems),
+            systems: {
+              score: scores.systems,
+              color: getScoreColor(scores.systems),
               commentary:
-                scores.managementSystems >= 7
+                scores.systems >= 7
                   ? "Advanced management systems"
-                  : scores.managementSystems >= 4
+                  : scores.systems >= 4
                     ? "Basic systems in place"
                     : "No proper systems - causing issues",
             },
-            labourProfitability: {
-              score: scores.labourProfitability,
-              color: getScoreColor(scores.labourProfitability),
+            profitability: {
+              score: scores.profitability,
+              color: getScoreColor(scores.profitability),
               commentary:
-                scores.labourProfitability >= 7
+                scores.profitability >= 7
                   ? "Good labour profitability"
-                  : scores.labourProfitability >= 4
+                  : scores.profitability >= 4
                     ? "Moderate profitability concerns"
                     : "Poor labour profitability",
+            },
+            onboarding: {
+              score: scores.onboarding,
+              color: getScoreColor(scores.onboarding),
+              commentary:
+                scores.onboarding >= 7
+                  ? "Effective onboarding process"
+                  : scores.onboarding >= 4
+                    ? "Basic onboarding in place"
+                    : "Onboarding needs improvement",
+            },
+            culture: {
+              score: scores.culture,
+              color: getScoreColor(scores.culture),
+              commentary:
+                scores.culture >= 7
+                  ? "Strong team culture and morale"
+                  : scores.culture >= 4
+                    ? "Average culture - could improve"
+                    : "Poor culture affecting retention",
             },
           },
           topRecommendations: [
             {
-              title: scores.reliabilityStability < 5 ? "Fix Subbie Reliability" : "Strengthen Labour Systems",
+              title: scores.reliability < 5 ? "Fix Subbie Reliability" : "Strengthen Labour Systems",
               explanation:
-                scores.reliabilityStability < 5
+                scores.reliability < 5
                   ? "Implement a tiered payment system and reliability tracking"
                   : "Formalize your labour management processes",
               impact: "£20K-£40K per year",
             },
             {
-              title: scores.managementSystems < 5 ? "Implement Management Software" : "Optimize Current Systems",
+              title: scores.systems < 5 ? "Implement Management Software" : "Optimize Current Systems",
               explanation:
-                scores.managementSystems < 5
+                scores.systems < 5
                   ? "Move from spreadsheets to proper labour management software"
                   : "Fine-tune your existing systems for better efficiency",
               impact: "£15K-£30K per year",
             },
             {
-              title: "Build Labour Pipeline",
-              explanation: "Create a systematic approach to attracting and retaining skilled workers",
+              title: scores.recruitment < 5 ? "Build Labour Pipeline" : "Maintain Strong Pipeline",
+              explanation:
+                scores.recruitment < 5
+                  ? "Create a systematic approach to attracting and retaining skilled workers"
+                  : "Continue nurturing your existing recruitment channels",
               impact: "£25K-£50K per year",
             },
           ],
@@ -512,6 +565,25 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                 {message.widget === "score-display" && message.data && (
                   <div className="mt-4">
                     <ScoreWidget data={message.data} />
+                  </div>
+                )}
+
+                {message.widget === "question-options" && message.data && (
+                  <div className="mt-4 space-y-2">
+                    {message.data.map((option: QuestionOption, optIndex: number) => (
+                      <Button
+                        key={optIndex}
+                        variant="outline"
+                        className="w-full justify-start text-left h-auto py-3 px-4"
+                        onClick={() => {
+                          setInput(option.label);
+                          handleSend();
+                        }}
+                        data-testid={`option-${optIndex}`}
+                      >
+                        {option.label}
+                      </Button>
+                    ))}
                   </div>
                 )}
 
