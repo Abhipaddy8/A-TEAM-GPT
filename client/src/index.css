@@ -44,18 +44,25 @@
   --chart-4: 30 80% 40%;
   --chart-5: 150 60% 35%;
   
-  /* A-Team Trades Pipeline Brand Colors */
-  --brand-blue: 210 100% 50%;
-  --brand-teal: 180 100% 39%;
+  /* Develop Coaching Brand Colors */
+  --brand-dark-navy: 215 57% 11%; /* #0A1A2F - Primary background, headers */
+  --brand-vivid-blue: 218 100% 50%; /* #005CFF - Primary CTAs, highlights */
+  --brand-sky-blue: 207 100% 69%; /* #62B6FF - Secondary highlight, hover */
+  --brand-charcoal: 0 0% 29%; /* #4A4A4A - Subheadings, labels */
+  --brand-soft-grey: 222 17% 91%; /* #E4E6EB - Background panels, cards */
+
+  /* Legacy brand colors (for backwards compatibility) */
+  --brand-blue: 218 100% 50%; /* Maps to Vivid Blue */
+  --brand-teal: 207 100% 69%; /* Maps to Sky Blue */
   
   /* Traffic Light Colors */
   --traffic-red: 0 84% 45%;
   --traffic-amber: 38 92% 50%;
   --traffic-green: 142 76% 36%;
   
-  --font-sans: Inter, sans-serif;
+  --font-sans: "Source Sans Pro", Inter, sans-serif;
   --font-serif: Georgia, serif;
-  --font-mono: Menlo, monospace;
+  --font-mono: "JetBrains Mono", "Fira Code", Menlo, monospace;
   --radius: .5rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(0 0% 0% / 0.00);
@@ -138,9 +145,16 @@
   --chart-4: 30 85% 70%;
   --chart-5: 150 65% 65%;
   
-  /* A-Team Trades Pipeline Brand Colors (same in dark mode) */
-  --brand-blue: 210 100% 50%;
-  --brand-teal: 180 100% 39%;
+  /* Develop Coaching Brand Colors (same in dark mode) */
+  --brand-dark-navy: 215 57% 11%; /* #0A1A2F */
+  --brand-vivid-blue: 218 100% 50%; /* #005CFF */
+  --brand-sky-blue: 207 100% 69%; /* #62B6FF */
+  --brand-charcoal: 0 0% 29%; /* #4A4A4A */
+  --brand-soft-grey: 222 17% 91%; /* #E4E6EB */
+
+  /* Legacy brand colors (for backwards compatibility) */
+  --brand-blue: 218 100% 50%;
+  --brand-teal: 207 100% 69%;
   
   /* Traffic Light Colors (same in dark mode) */
   --traffic-red: 0 84% 45%;

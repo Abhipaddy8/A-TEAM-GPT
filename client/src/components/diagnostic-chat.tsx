@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Send, Loader2, CheckCircle2, AlertCircle, TrendingUp, XCircle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, CheckCircle2, AlertCircle, TrendingUp, XCircle, Sparkles, Zap, Target } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -173,37 +173,42 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   }, []);
 
   const submitEmailMutation = useMutation({
-    mutationFn: async (data: { 
-      email: string; 
-      firstName: string; 
-      lastName: string; 
+    mutationFn: async (data: {
+      email: string;
+      firstName: string;
+      lastName: string;
       diagnosticData: any;
       utmSource?: string;
       utmMedium?: string;
       utmCampaign?: string;
     }) => {
-      return apiRequest("POST", "/api/submit-email", {
+      console.log('[Client] Submitting email with data:', { email: data.email, firstName: data.firstName });
+      const result = await apiRequest("POST", "/api/submit-email", {
         ...data,
         sessionId,
         ...utmParams,
       });
+      console.log('[Client] Email submission result:', result);
+      return result;
     },
     onSuccess: (data: any) => {
+      console.log('[Client] Email submitted successfully, showing phone form');
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content:
-            "Perfect! I'm generating your personalised PDF report now. You'll receive it in your inbox within the next few minutes.\n\nI've also got a bonus most builders love — I can text you the A-Team Trades Quick Win Pack (3 fast fixes for your labour pipeline).\n\nWant it? If yes, enter your mobile number below. If not, just click Skip.",
+            "Perfect! Your report is being generated and will arrive in your inbox shortly.\n\nBonus: I can text you the A-Team Trades Quick Win Pack (3 fast fixes for your labour pipeline).\n\nWant it? Enter your mobile number below or click Skip.",
           widget: "phone-form",
         },
       ]);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('[Client] Email submission error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate report. Please try again.",
+        description: error?.message || "Failed to generate report. Please try again.",
       });
     },
   });
@@ -480,10 +485,27 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
     const lastName = formData.get("lastName") as string;
     const email = formData.get("email") as string;
 
-    if (!email || !firstName || !lastName || !diagnosticData) return;
+    console.log('[Client] Email form submitted:', { firstName, lastName, email, hasDiagnosticData: !!diagnosticData });
+
+    if (!email || !firstName || !lastName || !diagnosticData) {
+      console.error('[Client] Missing required fields');
+      toast({
+        variant: "destructive",
+        title: "Missing Information",
+        description: "Please fill in all fields",
+      });
+      return;
+    }
+
+    // Update diagnosticData with email before sending
+    const updatedDiagnosticData = {
+      ...diagnosticData,
+      email,
+      builderName: `${firstName} ${lastName}`,
+    };
 
     setMessages((prev) => [...prev, { role: "user", content: `${firstName} ${lastName} - ${email}` }]);
-    submitEmailMutation.mutate({ email, firstName, lastName, diagnosticData });
+    submitEmailMutation.mutate({ email, firstName, lastName, diagnosticData: updatedDiagnosticData });
   };
 
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -522,44 +544,59 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-8">
         <Button
           variant="ghost"
           size="sm"
           onClick={onBack}
-          className="mb-4"
+          className="mb-4 hover:bg-brand-soft-grey/50 transition-colors"
           data-testid="button-back"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-2xl font-bold">Labour Pipeline Diagnostic</h2>
-          <Badge variant="secondary">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-3xl font-bold text-brand-dark-navy">Labour Pipeline Diagnostic</h2>
+          <Badge className="bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white px-4 py-2 text-sm font-semibold">
             {currentStep}/7 Questions
           </Badge>
         </div>
-        <Progress value={progress} className="h-2" />
+        <div className="relative">
+          <Progress value={progress} className="h-3 bg-brand-soft-grey" />
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue rounded-full" style={{ width: `${progress}%`, transition: 'width 0.5s ease-in-out' }} />
+        </div>
       </div>
 
       {/* Chat Container */}
-      <Card className="p-6 min-h-[600px] flex flex-col shadow-2xl border-brand-blue/20">
+      <Card className="p-6 min-h-[600px] flex flex-col shadow-2xl border-brand-vivid-blue/20 bg-gradient-to-b from-white to-gray-50">
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto mb-4 space-y-4" data-testid="chat-messages">
+        <div className="flex-1 overflow-y-auto mb-4 space-y-6" data-testid="chat-messages">
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <div
-                className={`max-w-[80%] rounded-xl p-4 ${
+                className={`max-w-[85%] rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl ${
                   message.role === "user"
-                    ? "bg-brand-blue text-white"
-                    : "bg-muted"
+                    ? "bg-gradient-to-br from-brand-vivid-blue to-brand-sky-blue text-white"
+                    : "bg-white border-2 border-brand-soft-grey"
                 }`}
                 data-testid={`message-${message.role}-${index}`}
               >
-                <p className="text-sm whitespace-pre-line">{message.content}</p>
+                {/* AI Icon for assistant messages */}
+                {message.role === "assistant" && (
+                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-brand-soft-grey">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-vivid-blue to-brand-sky-blue flex items-center justify-center">
+                      <Sparkles className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wide">A-Team Assistant</span>
+                  </div>
+                )}
+                <p className={`text-base leading-relaxed whitespace-pre-line ${message.role === "user" ? "text-white" : "text-brand-charcoal"}`}>
+                  {message.content}
+                </p>
 
                 {/* Widgets */}
                 {message.widget === "score-display" && message.data && (
@@ -569,29 +606,34 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                 )}
 
                 {message.widget === "question-options" && message.data && (
-                  <div className="mt-4 space-y-2">
+                  <div className="mt-6 space-y-3">
                     {message.data.map((option: QuestionOption, optIndex: number) => (
                       <Button
                         key={optIndex}
                         variant="outline"
-                        className="w-full justify-start text-left h-auto py-3 px-4"
+                        className="w-full justify-start text-left h-auto py-4 px-5 border-2 border-brand-vivid-blue/20 hover:border-brand-vivid-blue hover:bg-brand-vivid-blue transition-all duration-300 hover:scale-[1.02] hover:shadow-lg group"
                         onClick={() => {
                           setInput(option.label);
                           handleSend();
                         }}
                         data-testid={`option-${optIndex}`}
                       >
-                        {option.label}
+                        <div className="flex items-center gap-3 w-full">
+                          <div className="w-10 h-10 rounded-full bg-brand-vivid-blue/10 group-hover:bg-white/20 flex items-center justify-center transition-colors shrink-0">
+                            <Target className="h-5 w-5 text-brand-vivid-blue group-hover:text-white transition-colors" />
+                          </div>
+                          <span className="font-medium text-sm flex-1 group-hover:text-white transition-colors">{option.label}</span>
+                        </div>
                       </Button>
                     ))}
                   </div>
                 )}
 
                 {message.widget === "email-form" && (
-                  <form onSubmit={handleEmailSubmit} className="mt-4 space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
+                  <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="firstName" className="text-foreground">
+                        <Label htmlFor="firstName" className="text-brand-charcoal font-semibold text-sm">
                           First Name
                         </Label>
                         <Input
@@ -600,12 +642,12 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                           type="text"
                           required
                           placeholder="John"
-                          className="mt-1"
+                          className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
                           data-testid="input-firstName"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="lastName" className="text-foreground">
+                        <Label htmlFor="lastName" className="text-brand-charcoal font-semibold text-sm">
                           Last Name
                         </Label>
                         <Input
@@ -614,13 +656,13 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                           type="text"
                           required
                           placeholder="Smith"
-                          className="mt-1"
+                          className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
                           data-testid="input-lastName"
                         />
                       </div>
                     </div>
                     <div>
-                      <Label htmlFor="email" className="text-foreground">
+                      <Label htmlFor="email" className="text-brand-charcoal font-semibold text-sm">
                         Email Address
                       </Label>
                       <Input
@@ -629,33 +671,36 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                         type="email"
                         required
                         placeholder="john.smith@example.com"
-                        className="mt-1"
+                        className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
                         data-testid="input-email"
                       />
                     </div>
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue hover:from-brand-vivid-blue/90 hover:to-brand-sky-blue/90 text-white font-semibold py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       disabled={submitEmailMutation.isPending}
                       data-testid="button-submit-email"
                     >
                       {submitEmailMutation.isPending ? (
                         <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Generating Report...
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Generating Your Report...
                         </>
                       ) : (
-                        "Send My Report"
+                        <>
+                          <Sparkles className="h-5 w-5 mr-2" />
+                          Send My Free Report
+                        </>
                       )}
                     </Button>
                   </form>
                 )}
 
                 {message.widget === "phone-form" && (
-                  <div className="mt-4 space-y-3">
-                    <form onSubmit={handlePhoneSubmit} className="space-y-3">
+                  <div className="mt-6 space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-sky-blue/20">
+                    <form onSubmit={handlePhoneSubmit} className="space-y-4">
                       <div>
-                        <Label htmlFor="phone" className="text-foreground">
+                        <Label htmlFor="phone" className="text-brand-charcoal font-semibold text-sm">
                           Mobile Number
                         </Label>
                         <Input
@@ -663,30 +708,34 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                           name="phone"
                           type="tel"
                           placeholder="+44 7700 900000"
-                          className="mt-1"
+                          className="mt-2 border-2 border-brand-soft-grey focus:border-brand-sky-blue transition-colors"
                           data-testid="input-phone"
                         />
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-3">
                         <Button
                           type="submit"
-                          className="flex-1"
+                          className="flex-1 bg-gradient-to-r from-brand-sky-blue to-brand-vivid-blue hover:from-brand-sky-blue/90 hover:to-brand-vivid-blue/90 text-white font-semibold py-5 shadow-lg hover:shadow-xl transition-all duration-300"
                           disabled={submitPhoneMutation.isPending}
                           data-testid="button-submit-phone"
                         >
                           {submitPhoneMutation.isPending ? (
                             <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Sending...
+                              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                              Sending SMS...
                             </>
                           ) : (
-                            "Text Me"
+                            <>
+                              <Zap className="h-5 w-5 mr-2" />
+                              Text Me Quick Wins
+                            </>
                           )}
                         </Button>
                         <Button
                           type="button"
                           variant="outline"
                           onClick={handleSkipPhone}
+                          className="px-6 border-2 hover:bg-brand-soft-grey transition-colors"
                           data-testid="button-skip-phone"
                         >
                           Skip
@@ -697,15 +746,17 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                 )}
 
                 {message.widget === "cta-button" && message.data && (
-                  <div className="mt-4">
+                  <div className="mt-6">
                     <a
                       href={message.data.href}
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="button-cta"
                     >
-                      <Button className="w-full bg-brand-teal hover:bg-brand-teal/90">
+                      <Button className="w-full bg-gradient-to-r from-brand-sky-blue to-brand-vivid-blue hover:from-brand-sky-blue/90 hover:to-brand-vivid-blue/90 text-white font-bold py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
+                        <Sparkles className="h-6 w-6 mr-3 group-hover:rotate-12 transition-transform" />
                         {message.data.label}
+                        <Zap className="h-6 w-6 ml-3 group-hover:rotate-12 transition-transform" />
                       </Button>
                     </a>
                   </div>
@@ -716,8 +767,15 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="max-w-[80%] rounded-xl p-4 bg-muted">
-                <Skeleton className="h-4 w-48" />
+              <div className="max-w-[85%] rounded-2xl p-5 bg-white border-2 border-brand-soft-grey shadow-lg animate-pulse">
+                <div className="flex items-center gap-2 mb-3 pb-3 border-b border-brand-soft-grey">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-vivid-blue to-brand-sky-blue flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 text-white animate-spin" />
+                  </div>
+                  <span className="text-xs font-semibold text-brand-charcoal uppercase tracking-wide">Analyzing...</span>
+                </div>
+                <div className="h-4 w-64 bg-brand-soft-grey rounded mb-2"></div>
+                <div className="h-4 w-48 bg-brand-soft-grey/60 rounded"></div>
               </div>
             </div>
           )}
@@ -757,7 +815,7 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
         )}
 
         {diagnosticData && !messages.some((m) => m.widget === "email-form") && currentStep === 7 && (
-          <div className="mt-4">
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <Button
               onClick={() => {
                 setMessages((prev) => [
@@ -770,10 +828,12 @@ export default function DiagnosticChat({ onBack }: DiagnosticChatProps) {
                   },
                 ]);
               }}
-              className="w-full bg-brand-blue hover:bg-brand-blue/90"
+              className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue hover:from-brand-vivid-blue/90 hover:to-brand-sky-blue/90 text-white font-bold py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
               data-testid="button-get-report"
             >
+              <Sparkles className="h-6 w-6 mr-3 group-hover:rotate-12 transition-transform" />
               Get My Full PDF Report
+              <Zap className="h-6 w-6 ml-3 group-hover:rotate-12 transition-transform" />
             </Button>
           </div>
         )}

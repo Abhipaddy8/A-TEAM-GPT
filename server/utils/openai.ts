@@ -1,9 +1,9 @@
-// OpenAI integration for generating PDF report content using GPT-5
-// Reference: javascript_openai_ai_integrations blueprint
+// OpenAI integration for generating PDF report content using GPT-4o-mini
+// Fast, cost-effective, and reliable for generating professional reports
 import OpenAI from "openai";
 import type { PdfReportData } from "@shared/schema";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+// Using GPT-4o-mini for fast and cost-effective report generation
 const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -221,27 +221,28 @@ Powered by Develop Coaching*
 Make this report professional, actionable, and motivating. Use UK English spelling and terminology appropriate for UK builders.`;
 
   try {
-    console.log("[OpenAI] Calling GPT-5 API...");
-    
-    // Add timeout to OpenAI call (30 seconds)
+    console.log("[OpenAI] Calling GPT-4o-mini API...");
+
+    // Add timeout to OpenAI call (45 seconds)
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error("OpenAI request timed out after 30 seconds")), 30000)
+      setTimeout(() => reject(new Error("OpenAI request timed out after 45 seconds")), 45000)
     );
 
     const apiPromise = openai.chat.completions.create({
-      model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini", // Fast, cost-effective GPT-4 model for report generation
       messages: [
         {
           role: "system",
           content:
-            "You are an expert business consultant specializing in UK construction and trades businesses. Generate professional, actionable PDF reports that help builders identify and fix labour pipeline issues.",
+            "You are an expert business consultant specializing in UK construction and trades businesses. Generate professional, actionable PDF reports in Markdown format that help builders identify and fix labour pipeline issues. Use UK English spelling. Be specific, practical, and motivating.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      max_completion_tokens: 8192,
+      temperature: 0.7,
+      max_completion_tokens: 4096,
     });
 
     const response = await Promise.race([apiPromise, timeoutPromise]);

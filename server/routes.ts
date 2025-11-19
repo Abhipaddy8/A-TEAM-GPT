@@ -61,22 +61,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log("[API] Contact created/updated successfully:", contactId);
 
-      // 2. Send email IMMEDIATELY (don't wait for PDF)
-      const mockPdfUrl = `https://reports.develop-coaching.co.uk/ateam-report-${sessionId}.pdf`;
+      // 2. Generate PDF FIRST (blocking - wait for it to complete)
+      let pdfUrl = `https://reports.develop-coaching.co.uk/ateam-report-${sessionId}.pdf`;
+      try {
+        console.log("[API] Generating PDF report...");
+        const fileName = `ateam-report-${sessionId || Date.now()}.pdf`;
+
+        const markdown = await generateReportMarkdown({
+          ...diagnosticData,
+          email,
+          builderName: `${firstName} ${lastName}`,
+        });
+
+        console.log("[API] Markdown generated, creating PDF...");
+        const pdfPath = await generatePDF(markdown, fileName);
+
+        console.log("[API] PDF created, uploading to storage...");
+        pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
+
+        // Update GHL contact with real PDF URL
+        await ghlService.updateCustomFields(contactId, {
+          pdf_url: pdfUrl,
+        });
+
+        console.log("[API] PDF generated and uploaded successfully:", {
+          contactId,
+          pdfUrl,
+        });
+      } catch (pdfError) {
+        console.error("[API] PDF generation failed:", {
+          error: pdfError,
+          contactId,
+          email,
+        });
+        // Continue with email even if PDF fails - user will still get the score info
+      }
+
+      // 3. Send email with actual PDF URL (or fallback URL if PDF failed)
       const emailSubject = `Your A-Team Trades Pipeline™ Report - Score: ${diagnosticData.overallScore}/100`;
       const emailHtml = `
         <!DOCTYPE html>
         <html>
         <head>
           <style>
-            body { font-family: 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; }
+            body { font-family: 'Source Sans Pro', 'Inter', Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #0063FF; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+            .header { background-color: #005CFF; color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
             .content { background-color: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; }
             .score-box { background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
-            .score { font-size: 48px; font-weight: bold; color: #0063FF; }
-            .button { display: inline-block; padding: 14px 28px; background-color: #0063FF; color: white !important; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: 600; }
-            .button-secondary { background-color: #00C2C7; }
+            .score { font-size: 48px; font-weight: bold; color: #005CFF; }
+            .button { display: inline-block; padding: 14px 28px; background-color: #005CFF; color: white !important; text-decoration: none; border-radius: 8px; margin: 16px 0; font-weight: 600; }
+            .button-secondary { background-color: #62B6FF; }
             ul { padding-left: 20px; }
             li { margin-bottom: 8px; }
             .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 14px; }
@@ -97,7 +132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               </div>
 
               <p style="text-align: center;">
-                <a href="${mockPdfUrl}" class="button">📄 Download Your Full PDF Report</a>
+                <a href="${pdfUrl}" class="button">📄 Download Your Full PDF Report</a>
               </p>
 
               <h3>Your Report Includes:</h3>
@@ -138,42 +173,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           contactId,
           email,
         });
-        // Don't throw - we still want to continue with PDF generation
+        throw emailError; // Throw so user knows email failed
       }
-
-      // 3. Generate PDF in background (AFTER email sent - non-blocking)
-      (async () => {
-        try {
-          console.log("[API] Starting background PDF generation...");
-          const fileName = `ateam-report-${sessionId || Date.now()}.pdf`;
-
-          const markdown = await generateReportMarkdown({
-            ...diagnosticData,
-            email,
-            builderName: `${firstName} ${lastName}`,
-          });
-
-          const pdfPath = await generatePDF(markdown, fileName);
-          const pdfUrl = await storageService.uploadPDF(pdfPath, fileName);
-
-          // Update GHL contact with real PDF URL
-          await ghlService.updateCustomFields(contactId, {
-            pdf_url: pdfUrl,
-          });
-
-          console.log("[API] PDF generated and uploaded successfully:", {
-            contactId,
-            pdfUrl,
-          });
-        } catch (error) {
-          console.error("[API] Background PDF generation failed:", {
-            error,
-            contactId,
-            email,
-          });
-          // PDF generation failed but email was already sent - that's OK
-        }
-      })();
 
       // 7. Create diagnostic session in storage with UTM parameters
       await storage.createDiagnosticSession({
@@ -277,17 +278,25 @@ Want help scaling? Book here: https://developcoaching.co.uk/schedule-a-call
 
 - Develop Coaching Team`;
 
+        console.log("[API] Attempting to send SMS:", {
+          contactId,
+          phone,
+          messageLength: smsMessage.length,
+        });
+
         try {
           await ghlService.sendSMS(contactId, phone, smsMessage);
-          console.log("[API] SMS sent successfully to:", phone);
-        } catch (smsError) {
-          console.error("[API] Failed to send SMS:", {
-            error: smsError,
+          console.log("[API] ✅ SMS sent successfully to:", phone);
+        } catch (smsError: any) {
+          console.error("[API] ❌ Failed to send SMS:", {
+            error: smsError.message,
+            stack: smsError.stack,
             contactId,
             phone,
             messageLength: smsMessage.length,
           });
-          throw smsError;
+          // Don't throw - we still want to save the phone number even if SMS fails
+          console.warn("[API] Phone number saved but SMS delivery failed. User may need manual follow-up.");
         }
       }
 
