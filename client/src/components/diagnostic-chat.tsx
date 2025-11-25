@@ -11,7 +11,6 @@ import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import ScoreWidget from "./score-widget";
-import CalendarPopup from "./calendar-popup";
 import type { PdfReportData } from "@shared/schema";
 
 interface Message {
@@ -24,6 +23,7 @@ interface Message {
 interface DiagnosticChatProps {
   onBack?: () => void;
   embedded?: boolean;
+  onBookingClick?: () => void;
 }
 
 interface QuestionOption {
@@ -114,7 +114,7 @@ const DIAGNOSTIC_QUESTIONS: DiagnosticQuestion[] = [
   },
 ];
 
-export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticChatProps) {
+export default function DiagnosticChat({ onBack, embedded = false, onBookingClick }: DiagnosticChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -136,17 +136,27 @@ export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticC
   }>({});
   const [inDiagnosticMode, setInDiagnosticMode] = useState(false);
   const [conversationCount, setConversationCount] = useState(0);
-  const [nudgeShown, setNudgeShown] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [lastNudgeCount, setLastNudgeCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end"
+      });
+    });
   };
 
+  // Auto-scroll on new messages, but skip initial page load (greeting only)
   useEffect(() => {
-    scrollToBottom();
+    // Skip scroll ONLY on embedded first load (greeting only)
+    const isJustGreeting = embedded && messages.length === 1;
+
+    if (!isJustGreeting) {
+      scrollToBottom();
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -672,18 +682,19 @@ export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticC
           },
         ]);
 
-        // Gentle nudge after 3-5 conversation messages (if not already shown)
-        if (!nudgeShown && conversationCount >= 2 && Math.random() > 0.5) {
+        // Occasional gentle nudge after 7+ messages (only 30% of the time, and every 7 messages)
+        const messagesSinceLastNudge = conversationCount - lastNudgeCount;
+        if (messagesSinceLastNudge >= 7 && Math.random() < 0.3) {
           setTimeout(() => {
             setMessages((prev) => [
               ...prev,
               {
                 role: "assistant",
-                content: "By the way, ready to discover where you're losing money? I can run a quick diagnostic for you - it takes just 3 minutes.",
+                content: "By the way, if you'd like to see exactly where you're losing money, I can run a quick 3-minute diagnostic for you. No pressure though - happy to keep chatting!",
                 widget: "skip-continue",
               },
             ]);
-            setNudgeShown(true);
+            setLastNudgeCount(conversationCount);
           }, 2000);
         }
       }
@@ -1091,7 +1102,7 @@ export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticC
                     {/* Primary CTA - Book Calendar */}
                     <Button
                       onClick={() => {
-                        setShowCalendar(true);
+                        onBookingClick?.();
                         setMessages((prev) => [
                           ...prev,
                           { role: "user", content: "Yes, I'm ready to scale!" },
@@ -1150,15 +1161,34 @@ export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticC
                 )}
 
                 {message.widget === "cta-button" && message.data && (
-                  <div className="mt-6">
+                  <div className="mt-6 space-y-3">
                     <Button
-                      onClick={() => setShowCalendar(true)}
+                      onClick={() => onBookingClick?.()}
                       className="w-full bg-gradient-to-r from-brand-sky-blue to-brand-vivid-blue hover:from-brand-sky-blue/90 hover:to-brand-vivid-blue/90 text-white font-bold py-6 text-lg shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
                       data-testid="button-cta"
                     >
                       <Sparkles className="h-6 w-6 mr-3 group-hover:rotate-12 transition-transform" />
                       {message.data.label}
                       <Zap className="h-6 w-6 ml-3 group-hover:rotate-12 transition-transform" />
+                    </Button>
+
+                    {/* Continue Chat Option */}
+                    <Button
+                      onClick={() => {
+                        setMessages((prev) => [
+                          ...prev,
+                          { role: "user", content: "I'd like to keep chatting for now" },
+                          {
+                            role: "assistant",
+                            content: "Perfect! I'm here to help with any other questions about your labour pipeline, recruitment, team management, or how to implement your fixes. What else would you like to know?",
+                          },
+                        ]);
+                      }}
+                      variant="outline"
+                      className="w-full border-2 border-brand-vivid-blue/40 hover:border-brand-vivid-blue hover:bg-brand-vivid-blue/10 text-gray-700 font-semibold py-5 text-base transition-all duration-300"
+                      data-testid="button-continue-chat-after-cta"
+                    >
+                      Continue Chatting Instead
                     </Button>
                   </div>
                 )}
@@ -1244,9 +1274,6 @@ export default function DiagnosticChat({ onBack, embedded = false }: DiagnosticC
           </div>
         )}
       </Card>
-
-      {/* Calendar Popup */}
-      <CalendarPopup isOpen={showCalendar} onClose={() => setShowCalendar(false)} />
     </div>
   );
 }

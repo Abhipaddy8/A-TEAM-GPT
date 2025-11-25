@@ -2,8 +2,28 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import DiagnosticChat from "@/components/diagnostic-chat";
+import CalendarPopup from "@/components/calendar-popup";
+import { useState, useRef } from "react";
 
 export default function Home() {
+  const [showCalendar, setShowCalendar] = useState(false);
+  const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Handle scroll ONLY when opening the calendar (not on every interaction)
+  const handleBookingClick = () => {
+    if (!showCalendar) {
+      // Opening - set to open and scroll
+      setShowCalendar(true);
+
+      // Scroll after the component renders (small delay for animation)
+      setTimeout(() => {
+        calendarRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 150);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white relative overflow-hidden">
@@ -78,8 +98,15 @@ export default function Home() {
 
         {/* Embedded Chat - Always Visible */}
         <div className="max-w-5xl mx-auto mb-16">
-          <DiagnosticChat embedded={true} />
+          <DiagnosticChat embedded={true} onBookingClick={handleBookingClick} />
         </div>
+
+        {/* Inline Calendar Section - Only render when open */}
+        {showCalendar && (
+          <div ref={calendarRef} className="max-w-5xl mx-auto">
+            <CalendarPopup isOpen={showCalendar} onClose={() => setShowCalendar(false)} />
+          </div>
+        )}
       </main>
 
       {/* Testimonials Section Below Chat */}
