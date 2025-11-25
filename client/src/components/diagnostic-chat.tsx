@@ -812,12 +812,47 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     submitEmailMutation.mutate({ email, firstName, lastName, diagnosticData: updatedDiagnosticData });
   };
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+
+    // UK phone numbers should have 10-11 digits
+    // Valid formats: 07700 900000, +447700900000, 07700900000, etc.
+    if (digitsOnly.length < 10 || digitsOnly.length > 13) {
+      return false;
+    }
+
+    // UK numbers start with 0 or 44 (country code)
+    if (!digitsOnly.startsWith('0') && !digitsOnly.startsWith('44')) {
+      return false;
+    }
+
+    return true;
+  };
+
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const phone = formData.get("phone") as string;
 
-    if (!phone) return;
+    if (!phone) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Please enter a phone number",
+      });
+      return;
+    }
+
+    // Validate phone number
+    if (!validatePhoneNumber(phone)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Phone Number",
+        description: "Please enter a valid UK phone number (e.g., +44 7700 900000 or 07700 900000)",
+      });
+      return;
+    }
 
     setMessages((prev) => [...prev, { role: "user", content: phone }]);
     submitPhoneMutation.mutate({
@@ -1215,13 +1250,14 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
         </div>
 
         {/* Input - Always available for conversation or diagnostic */}
-        {!diagnosticData && (
+        {/* Show input if: not in diagnostic mode OR if user clicked "Continue Chatting" */}
+        {(!diagnosticData || messages.some((m) => m.content.includes("keep chatting"))) && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleSend();
             }}
-            className="flex gap-2"
+            className="flex gap-2 mt-4"
           >
             <Input
               value={input}
