@@ -77,7 +77,7 @@ export default function Home() {
 
           {/* Subheading */}
           <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-medium leading-relaxed">
-            Find the exact gaps costing you <span className="text-brand-dark-navy font-bold">£20K–£90K per year</span>
+            Find the exact gaps <span className="text-brand-dark-navy font-bold">potentially costing you up to $100K per year</span>
           </p>
         </section>
 

@@ -1051,70 +1051,76 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                 )}
 
                 {message.widget === "email-form" && (
-                  <form onSubmit={handleEmailSubmit} className="mt-6 space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName" className="text-brand-charcoal font-semibold text-sm">
-                          First Name
-                        </Label>
-                        <Input
-                          id="firstName"
-                          name="firstName"
-                          type="text"
-                          required
-                          placeholder="John"
-                          className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
-                          data-testid="input-firstName"
-                        />
+                  <div className="mt-6 space-y-4">
+                    <div className="text-center mb-4">
+                      <p className="text-brand-dark-navy font-bold text-lg mb-2">WANT TO GO DEEPER?</p>
+                      <p className="text-gray-600 text-sm">Enter your email to get a detailed report</p>
+                    </div>
+                    <form onSubmit={handleEmailSubmit} className="space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName" className="text-brand-charcoal font-semibold text-sm">
+                            First Name
+                          </Label>
+                          <Input
+                            id="firstName"
+                            name="firstName"
+                            type="text"
+                            required
+                            placeholder="John"
+                            className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
+                            data-testid="input-firstName"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-brand-charcoal font-semibold text-sm">
+                            Last Name
+                          </Label>
+                          <Input
+                            id="lastName"
+                            name="lastName"
+                            type="text"
+                            required
+                            placeholder="Smith"
+                            className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
+                            data-testid="input-lastName"
+                          />
+                        </div>
                       </div>
                       <div>
-                        <Label htmlFor="lastName" className="text-brand-charcoal font-semibold text-sm">
-                          Last Name
+                        <Label htmlFor="email" className="text-brand-charcoal font-semibold text-sm">
+                          Email Address
                         </Label>
                         <Input
-                          id="lastName"
-                          name="lastName"
-                          type="text"
+                          id="email"
+                          name="email"
+                          type="email"
                           required
-                          placeholder="Smith"
+                          placeholder="john.smith@example.com"
                           className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
-                          data-testid="input-lastName"
+                          data-testid="input-email"
                         />
                       </div>
-                    </div>
-                    <div>
-                      <Label htmlFor="email" className="text-brand-charcoal font-semibold text-sm">
-                        Email Address
-                      </Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        placeholder="john.smith@example.com"
-                        className="mt-2 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
-                        data-testid="input-email"
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue hover:from-brand-vivid-blue/90 hover:to-brand-sky-blue/90 text-white font-semibold py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-                      disabled={submitEmailMutation.isPending}
-                      data-testid="button-submit-email"
-                    >
-                      {submitEmailMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                          Generating Your Report...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="h-5 w-5 mr-2" />
-                          Send My Free Report
-                        </>
-                      )}
-                    </Button>
-                  </form>
+                      <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue hover:from-brand-vivid-blue/90 hover:to-brand-sky-blue/90 text-white font-semibold py-6 text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        disabled={submitEmailMutation.isPending}
+                        data-testid="button-submit-email"
+                      >
+                        {submitEmailMutation.isPending ? (
+                          <>
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                            Generating Your Report...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="h-5 w-5 mr-2" />
+                            SEND ME MY DETAILED PDF REPORT
+                          </>
+                        )}
+                      </Button>
+                    </form>
+                  </div>
                 )}
 
                 {message.widget === "phone-form" && (
