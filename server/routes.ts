@@ -33,7 +33,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { email, firstName, lastName, diagnosticData, sessionId, utmSource, utmMedium, utmCampaign } = validationResult.data;
+      let { email, firstName, lastName, diagnosticData, sessionId, utmSource, utmMedium, utmCampaign } = validationResult.data;
+
+      // Normalize email to lowercase for consistent session lookup
+      email = email.trim().toLowerCase();
 
       console.log("[API] Processing email submission for:", email, firstName, lastName);
 
@@ -141,14 +144,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      const { phone, email, utmSource, utmMedium, utmCampaign } = validationResult.data;
+      let { phone, email, utmSource, utmMedium, utmCampaign } = validationResult.data;
+
+      // Normalize email to lowercase for consistent session lookup
+      email = email.trim().toLowerCase();
 
       console.log("[API] Processing phone submission for:", email);
 
-      // 1. Find existing session
+      // 1. Find existing session by normalized email
       const session = await storage.getDiagnosticSessionByEmail(email);
       if (!session) {
-        return res.status(404).json({ error: "Session not found" });
+        return res.status(404).json({
+          error: "Session not found",
+          details: "Email not found in system. Please complete the email step first.",
+          email
+        });
       }
 
       // 2. Build merged UTM parameters (stored session UTMs + fresh request UTMs)
@@ -207,8 +217,9 @@ Want help scaling? Book here: https://developcoaching.co.uk/schedule-a-call
             phone,
             messageLength: smsMessage.length,
           });
-          // Don't throw - we still want to save the phone number even if SMS fails
-          console.warn("[API] Phone number saved but SMS delivery failed. User may need manual follow-up.");
+          // Non-blocking: Log error but continue processing
+          // User phone is still saved even if SMS delivery failed
+          console.warn("[API] ⚠️  Phone number saved to GHL. SMS delivery will be retried or handled separately.");
         }
       }
 

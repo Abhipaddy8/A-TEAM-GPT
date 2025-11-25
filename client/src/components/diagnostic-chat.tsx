@@ -801,33 +801,57 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return;
     }
 
+    // Normalize email to lowercase for consistent session lookup
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Store email in sessionStorage for phone submission later
+    sessionStorage.setItem("diagnostic_email", normalizedEmail);
+
     // Update diagnosticData with email before sending
     const updatedDiagnosticData = {
       ...diagnosticData,
-      email,
+      email: normalizedEmail,
       builderName: `${firstName} ${lastName}`,
     };
 
-    setMessages((prev) => [...prev, { role: "user", content: `${firstName} ${lastName} - ${email}` }]);
-    submitEmailMutation.mutate({ email, firstName, lastName, diagnosticData: updatedDiagnosticData });
+    setMessages((prev) => [...prev, { role: "user", content: `${firstName} ${lastName} - ${normalizedEmail}` }]);
+    submitEmailMutation.mutate({ email: normalizedEmail, firstName, lastName, diagnosticData: updatedDiagnosticData });
   };
 
   const validatePhoneNumber = (phone: string): boolean => {
-    // Remove all non-digit characters
-    const digitsOnly = phone.replace(/\D/g, '');
+    const digits = phone.replace(/\D/g, '');
 
-    // UK phone numbers should have 10-11 digits
-    // Valid formats: 07700 900000, +447700900000, 07700900000, etc.
-    if (digitsOnly.length < 10 || digitsOnly.length > 13) {
+    // Must be 10-13 digits after stripping
+    if (digits.length < 10 || digits.length > 13) {
       return false;
     }
 
-    // UK numbers start with 0 or 44 (country code)
-    if (!digitsOnly.startsWith('0') && !digitsOnly.startsWith('44')) {
-      return false;
+    // Valid UK phone number formats
+    if (
+      digits.startsWith('07') ||    // Local mobile (07xxxxxxxxx)
+      digits.startsWith('447') ||   // International without + (447xxxxxxxxx)
+      digits.startsWith('44')       // International (447xxxxxxxxx or 440xxxxxxxxx)
+    ) {
+      return true;
     }
 
-    return true;
+    return false;
+  };
+
+  const normalizePhone = (phone: string): string => {
+    let digits = phone.replace(/\D/g, '');
+
+    // Convert local format to international
+    if (digits.startsWith('07')) {
+      digits = '44' + digits.substring(1); // 07700... → 447700...
+    }
+
+    // Ensure +44 prefix
+    if (!digits.startsWith('44')) {
+      digits = '44' + digits;
+    }
+
+    return digits;
   };
 
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -835,7 +859,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     const formData = new FormData(e.currentTarget);
     const phone = formData.get("phone") as string;
 
-    if (!phone) {
+    // Guard 1: Phone is required
+    if (!phone || phone.trim() === "") {
       toast({
         variant: "destructive",
         title: "Error",
@@ -844,7 +869,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return;
     }
 
-    // Validate phone number
+    // Guard 2: Validate phone number format
     if (!validatePhoneNumber(phone)) {
       toast({
         variant: "destructive",
@@ -854,10 +879,24 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return;
     }
 
+    // Guard 3: Email must be available (stored during email submission)
+    const storedEmail = sessionStorage.getItem("diagnostic_email");
+    if (!storedEmail) {
+      toast({
+        variant: "destructive",
+        title: "Session Error",
+        description: "Please complete the email step first",
+      });
+      return;
+    }
+
+    // Normalize phone to consistent format (44xxxxxxxxxx)
+    const normalizedPhone = normalizePhone(phone);
+
     setMessages((prev) => [...prev, { role: "user", content: phone }]);
     submitPhoneMutation.mutate({
-      phone,
-      email: diagnosticData?.email || "unknown@example.com",
+      phone: normalizedPhone,
+      email: storedEmail,
     });
   };
 
