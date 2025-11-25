@@ -672,15 +672,30 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
         // Free conversation mode - increment conversation count
         setConversationCount((prev) => prev + 1);
 
-        // Generate a conversational response
-        const response = generateConversationalResponse(userMessage);
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: response,
-          },
-        ]);
+        try {
+          // Call AI chat endpoint for real conversation
+          const aiResponse = await apiRequest("POST", "/api/chat", {
+            message: userMessage,
+          });
+
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: aiResponse.message,
+            },
+          ]);
+        } catch (error) {
+          console.error("[Chat] Error getting AI response:", error);
+          // Fallback to basic response if API fails
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "I'm having trouble responding right now. Please try again, or book a call with our team for personalized help.",
+            },
+          ]);
+        }
 
         // Occasional gentle nudge after 7+ messages (only 30% of the time, and every 7 messages)
         const messagesSinceLastNudge = conversationCount - lastNudgeCount;
@@ -857,10 +872,11 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   const handlePhoneSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const phone = formData.get("phone") as string;
+    const countryCode = formData.get("countryCode") as string;
+    const phoneNumber = formData.get("phone") as string;
 
     // Guard 1: Phone is required
-    if (!phone || phone.trim() === "") {
+    if (!phoneNumber || phoneNumber.trim() === "") {
       toast({
         variant: "destructive",
         title: "Error",
@@ -869,12 +885,15 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return;
     }
 
+    // Combine country code + phone for validation
+    const fullPhone = countryCode + phoneNumber;
+
     // Guard 2: Validate phone number format
-    if (!validatePhoneNumber(phone)) {
+    if (!validatePhoneNumber(fullPhone)) {
       toast({
         variant: "destructive",
         title: "Invalid Phone Number",
-        description: "Please enter a valid UK phone number (e.g., +44 7700 900000 or 07700 900000)",
+        description: "Please enter a valid phone number (e.g., 7700 900000)",
       });
       return;
     }
@@ -891,9 +910,12 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     }
 
     // Normalize phone to consistent format (44xxxxxxxxxx)
-    const normalizedPhone = normalizePhone(phone);
+    const normalizedPhone = normalizePhone(fullPhone);
 
-    setMessages((prev) => [...prev, { role: "user", content: phone }]);
+    // Display formatted phone in chat (with country code prefix)
+    const displayPhone = `+${countryCode} ${phoneNumber}`;
+
+    setMessages((prev) => [...prev, { role: "user", content: displayPhone }]);
     submitPhoneMutation.mutate({
       phone: normalizedPhone,
       email: storedEmail,
@@ -1099,17 +1121,41 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                   <div className="mt-6 space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-sky-blue/20">
                     <form onSubmit={handlePhoneSubmit} className="space-y-4">
                       <div>
-                        <Label htmlFor="phone" className="text-brand-charcoal font-semibold text-sm">
+                        <Label className="text-brand-charcoal font-semibold text-sm">
                           Mobile Number
                         </Label>
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="+44 7700 900000"
-                          className="mt-2 border-2 border-brand-soft-grey focus:border-brand-sky-blue transition-colors"
-                          data-testid="input-phone"
-                        />
+                        <div className="flex gap-2 mt-2">
+                          {/* Country Code Selector */}
+                          <div className="flex-shrink-0">
+                            <select
+                              name="countryCode"
+                              defaultValue="44"
+                              className="w-24 px-3 py-2 border-2 border-brand-soft-grey rounded-lg focus:border-brand-vivid-blue focus:ring-2 focus:ring-brand-vivid-blue/20 transition-colors font-semibold text-sm"
+                              data-testid="select-country-code"
+                            >
+                              <option value="44">🇬🇧 +44</option>
+                              <option value="1">🇺🇸 +1</option>
+                              <option value="353">🇮🇪 +353</option>
+                              <option value="61">🇦🇺 +61</option>
+                              <option value="64">🇳🇿 +64</option>
+                              <option value="27">🇿🇦 +27</option>
+                              <option value="1-876">🇯🇲 +1-876</option>
+                              <option value="33">🇫🇷 +33</option>
+                              <option value="49">🇩🇪 +49</option>
+                            </select>
+                          </div>
+
+                          {/* Phone Number Input */}
+                          <Input
+                            id="phone"
+                            name="phone"
+                            type="tel"
+                            placeholder="7700 900000"
+                            className="flex-1 border-2 border-brand-soft-grey focus:border-brand-vivid-blue transition-colors"
+                            data-testid="input-phone"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Enter number without country code (e.g., 7700 900000)</p>
                       </div>
                       <div className="flex gap-3">
                         <Button

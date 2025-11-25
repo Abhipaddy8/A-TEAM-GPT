@@ -294,6 +294,95 @@ Want help scaling? Book here: https://developcoaching.co.uk/schedule-a-call
     }
   });
 
+  // POST /api/chat - AI-powered conversation for "Continue Chatting"
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const bodySchema = z.object({
+        message: z.string().min(1),
+      });
+
+      const validationResult = bodySchema.safeParse(req.body);
+
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validationResult.error.format(),
+        });
+      }
+
+      const { message } = validationResult.data;
+
+      console.log("[API] Processing chat message:", message.substring(0, 50) + "...");
+
+      // Call OpenAI for real conversation
+      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          messages: [
+            {
+              role: "system",
+              content: `You are an expert construction business consultant specializing in UK trades businesses (plumbing, electrical, carpentry, etc.). You help builders and tradespeople solve problems with their labour pipeline, team management, recruitment, scheduling, and profitability.
+
+You provide practical, actionable advice based on real construction industry experience. Be conversational, friendly, and direct. Give specific recommendations when asked.
+
+Focus on:
+- Recruiting and retaining reliable subcontractors and employees
+- Building reliable labour pipelines
+- Scheduling and project management
+- Team culture and retention
+- Scaling the business efficiently
+- Common problems in UK trades businesses
+
+Keep responses concise and practical. If the user asks about booking a call or scheduling, encourage them to book via the link provided in the chat.`
+            },
+            {
+              role: "user",
+              content: message
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
+      });
+
+      if (!openaiResponse.ok) {
+        const error = await openaiResponse.json();
+        console.error("[API] OpenAI error:", error);
+        return res.status(500).json({
+          error: "Failed to generate response",
+          message: error.error?.message || "Unknown error",
+        });
+      }
+
+      const data = await openaiResponse.json();
+      const aiMessage = data.choices?.[0]?.message?.content;
+
+      if (!aiMessage) {
+        return res.status(500).json({
+          error: "No response from AI",
+        });
+      }
+
+      console.log("[API] ✅ AI response generated successfully");
+
+      res.json({
+        success: true,
+        message: aiMessage,
+      });
+    } catch (error) {
+      console.error("[API] Error in chat:", error);
+      res.status(500).json({
+        error: "Failed to process chat message",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;
