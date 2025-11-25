@@ -1051,8 +1051,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                 )}
 
                 {message.widget === "email-form" && (
-                  <div className="mt-6 space-y-4">
-                    <div className="text-center mb-4">
+                  <>
+                    <div className="text-center mb-4 mt-6">
                       <p className="text-brand-dark-navy font-bold text-lg mb-2">WANT TO GO DEEPER?</p>
                       <p className="text-gray-600 text-sm">Enter your email to get a detailed report</p>
                     </div>
@@ -1115,16 +1115,20 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                         ) : (
                           <>
                             <Sparkles className="h-5 w-5 mr-2" />
-                            SEND ME MY DETAILED PDF REPORT
+                            Send me deeper insights
                           </>
                         )}
                       </Button>
                     </form>
-                  </div>
+                  </>
                 )}
 
                 {message.widget === "phone-form" && (
                   <div className="mt-6 space-y-4 bg-gradient-to-br from-brand-soft-grey/30 to-white p-6 rounded-xl border-2 border-brand-sky-blue/20">
+                    <div className="text-center mb-4">
+                      <p className="text-brand-dark-navy font-bold text-lg mb-2">Want more insight?</p>
+                      <p className="text-gray-600 text-sm">Get access to our free training on attracting the best talent</p>
+                    </div>
                     <form onSubmit={handlePhoneSubmit} className="space-y-4">
                       <div>
                         <Label className="text-brand-charcoal font-semibold text-sm">
@@ -1178,7 +1182,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                           ) : (
                             <>
                               <Zap className="h-5 w-5 mr-2" />
-                              Text Me Quick Wins
+                              Send me training access
                             </>
                           )}
                         </Button>
@@ -1378,7 +1382,10 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
         )}
 
         {diagnosticData && !messages.some((m) => m.widget === "email-form") && currentStep === 7 && (
-          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-3">
+            <div className="text-center">
+              <p className="text-brand-dark-navy font-bold text-lg">Want to go deeper?</p>
+            </div>
             <Button
               onClick={() => {
                 setMessages((prev) => [

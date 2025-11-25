@@ -185,18 +185,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           customFields: Object.keys(customFields).length > 0 ? customFields : undefined,
         });
 
-        // 4. Send Quick Win Pack SMS via GHL Conversations API
-        const smsMessage = `Hi! Your A-Team Trades Quick Win Pack is ready:
+        // 4. Send training + bonus pack SMS via GHL Conversations API
+        const smsMessage = `Hi! Your exclusive "Attract The Best™" training + bonus pack is ready.
 
-#1 RELIABILITY FIX: Text your top 3 subbies this: "Rate yourself 1-10 on reliability. What would make you a 10?"
+Access the proven framework to:
+✓ Attract top talent consistently
+✓ Build a team that shows up on time
+✓ Save £15K-£35K+ in labour leaks
 
-#2 PIPELINE FIX: Post one Facebook ad: "Reliable tradie needed. £X/day. DM if you show up on time."
+Get your training: https://developcoaching.co.uk/attract-the-best/
 
-#3 RETENTION FIX: Ask your best subbie: "What nearly made you quit? How can I fix it?"
-
-These 3 fixes take 20 mins but save £15K-35K/year in labour leaks.
-
-Want help scaling? Book here: https://developcoaching.co.uk/schedule-a-call
+Your bonus pack reveals the exact system successful builders use.
 
 - Develop Coaching Team`;
 
