@@ -1,41 +1,37 @@
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, TrendingUp, Users, Clock, Sparkles, Zap, Target, BarChart3, Award, ArrowRight, Lightbulb, Briefcase, LineChart, Hammer, Shield, Wrench } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import DiagnosticChat from "@/components/diagnostic-chat";
 
 export default function Home() {
-  const [showChat, setShowChat] = useState(false);
-  const [hoveredCard, setHoveredCard] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-dark-navy via-[#0D1F38] to-[#0A1A2F] relative overflow-hidden">
-      {/* Animated Background Orbs - More Subtle and Professional */}
+    <div className="min-h-screen bg-white relative overflow-hidden">
+      {/* Animated Background Orbs - Subtle on white background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Top Right Orb */}
-        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-vivid-blue/8 rounded-full blur-3xl"
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-brand-vivid-blue/5 rounded-full blur-3xl"
              style={{ animation: "float 6s ease-in-out infinite" }}></div>
 
         {/* Bottom Left Orb */}
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-brand-sky-blue/8 rounded-full blur-3xl"
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-brand-sky-blue/5 rounded-full blur-3xl"
              style={{ animation: "float 8s ease-in-out infinite reverse" }}></div>
 
         {/* Center Orb */}
-        <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 w-[500px] h-[500px] bg-brand-vivid-blue/5 rounded-full blur-3xl"
+        <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 w-[500px] h-[500px] bg-brand-vivid-blue/3 rounded-full blur-3xl"
              style={{ animation: "float 10s ease-in-out infinite" }}></div>
       </div>
 
       {/* Navigation Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-gradient-to-b from-brand-dark-navy/95 to-brand-dark-navy/80 border-b border-brand-vivid-blue/10">
+      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/95 border-b border-brand-vivid-blue/20">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
           <div className="flex items-center gap-3 group cursor-pointer">
             <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-brand-vivid-blue to-brand-sky-blue flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-brand-vivid-blue/40 group-hover:shadow-brand-vivid-blue/60 transition-all duration-300">
               A
             </div>
             <div>
-              <div className="font-semibold text-sm text-white">A-Team Trades Pipeline™</div>
-              <div className="text-xs text-brand-sky-blue/80">by Develop Coaching</div>
+              <div className="font-semibold text-sm text-brand-dark-navy">A-Team Trades Pipeline™</div>
+              <div className="text-xs text-brand-vivid-blue">by Develop Coaching</div>
             </div>
           </div>
           <Badge className="hidden md:flex bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white border-0 px-4 py-1.5 text-xs font-semibold hover:shadow-lg hover:shadow-brand-vivid-blue/30 transition-all duration-300 cursor-pointer">
@@ -46,308 +42,104 @@ export default function Home() {
       </header>
 
       {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8 md:py-16 max-w-7xl">
-        {!showChat ? (
-          <>
-            {/* Hero Section */}
-            <section className="text-center max-w-5xl mx-auto mb-24 pt-8">
-              {/* Badge */}
-              <div className="mb-8 inline-flex">
-                <Badge className="bg-gradient-to-r from-brand-sky-blue/20 to-brand-vivid-blue/20 text-brand-sky-blue border border-brand-sky-blue/40 px-5 py-2 text-xs font-semibold backdrop-blur-sm hover:border-brand-sky-blue/70 transition-all duration-300"
-                       style={{ animation: "pulse 2s ease-in-out infinite" }}>
-                  <Clock className="h-3.5 w-3.5 mr-2" />
-                  Only 3 Minutes • Zero Signup Required
-                </Badge>
+      <main className="relative z-10 container mx-auto px-4 py-8 md:py-12 max-w-7xl">
+        {/* Hero Section - Headline & Subheadline Only */}
+        <section className="text-center max-w-4xl mx-auto mb-8">
+          {/* Main Headline */}
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight tracking-tight">
+            <span className="block mb-2 text-brand-dark-navy">
+              Discover Where Your
+            </span>
+            <span className="block text-brand-vivid-blue">
+              Labour Pipeline is Leaking
+            </span>
+          </h1>
+
+          {/* Subheading */}
+          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-medium leading-relaxed">
+            Find the exact gaps costing you <span className="text-brand-dark-navy font-bold">£20K–£90K per year</span>
+          </p>
+        </section>
+
+        {/* Video Placeholder Section */}
+        <section className="max-w-5xl mx-auto mb-12">
+          <div className="aspect-video bg-gradient-to-br from-gray-200 to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center shadow-lg">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-brand-vivid-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <svg className="w-10 h-10 text-white fill-current" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z" />
+                </svg>
               </div>
+              <p className="text-gray-700 font-semibold text-lg">Watch Our Introduction</p>
+              <p className="text-gray-500 text-sm mt-2">See how builders are fixing their labour pipeline</p>
+            </div>
+          </div>
+        </section>
 
-              {/* Main Headline */}
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 leading-tight tracking-tight">
-                <span className="block mb-3 text-white" style={{ animation: "slideInUp 0.8s ease-out" }}>
-                  Discover Where Your
-                </span>
-                <span className="block text-[#62B6FF]" style={{ animation: "slideInUp 0.8s ease-out 0.1s both" }}>
-                  Labour Pipeline is Leaking
-                </span>
-              </h1>
-
-              {/* Subheading */}
-              <p className="text-xl md:text-2xl text-gray-300 mb-6 max-w-3xl mx-auto font-medium leading-relaxed"
-                 style={{ animation: "fadeIn 0.8s ease-out 0.2s both" }}>
-                Find the exact gaps costing you <span className="text-white font-bold text-2xl">£20K–£90K per year</span>
-              </p>
-
-              {/* Supporting Text */}
-              <p className="text-base text-gray-400 mb-12 max-w-2xl mx-auto leading-relaxed"
-                 style={{ animation: "fadeIn 0.8s ease-out 0.3s both" }}>
-                Join 500+ UK builders who've used our free diagnostic to identify their biggest labour problems and add tens of thousands to their bottom line.
-              </p>
-
-              {/* CTA Button */}
-              <div style={{ animation: "fadeIn 0.8s ease-out 0.4s both" }}>
-                <Button
-                  size="lg"
-                  className="h-16 px-12 text-lg font-bold bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white border-0 rounded-lg shadow-2xl shadow-brand-vivid-blue/40 hover:shadow-brand-vivid-blue/60 transform hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
-                  onClick={() => setShowChat(true)}
-                  data-testid="button-start-diagnostic"
-                >
-                  <Zap className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform duration-300" />
-                  Start Your Free Diagnostic
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-2 transition-transform duration-300" />
-                </Button>
-              </div>
-
-              {/* Trust Badge */}
-              <p className="text-sm text-gray-400 mt-8 flex items-center justify-center gap-2"
-                 style={{ animation: "fadeIn 0.8s ease-out 0.5s both" }}>
-                <CheckCircle2 className="h-4 w-4 text-green-400/80" />
-                Instant beautiful report • No credit card needed • 100% confidential
-              </p>
-            </section>
-
-            {/* Three Key Benefits Grid */}
-            <section className="grid md:grid-cols-3 gap-6 mb-20">
-              {[
-                {
-                  icon: Clock,
-                  title: "Lightning Fast",
-                  subtitle: "3 Minutes",
-                  description: "Quick 7-question assessment identifies your biggest labour inefficiencies instantly",
-                  color: "from-[#0D2A52] to-[#071636]",
-                  borderColor: "border-[#1E4976]/40",
-                  iconColor: "text-[#5BA3D0]",
-                  delay: 0.1
-                },
-                {
-                  icon: BarChart3,
-                  title: "Clear Insights",
-                  subtitle: "Instant Results",
-                  description: "Traffic-light scoring system shows exactly where you're losing money and why",
-                  color: "from-[#0D3D52] to-[#071636]",
-                  borderColor: "border-[#1E6976]/40",
-                  iconColor: "text-[#5BA3D0]",
-                  delay: 0.2
-                },
-                {
-                  icon: Target,
-                  title: "Actionable Plan",
-                  subtitle: "Real Solutions",
-                  description: "Top 3 prioritized fixes to plug your leaks and add £20K–£50K to your profits",
-                  color: "from-[#1A4D36] to-[#0D2318]",
-                  borderColor: "border-[#2F7A5A]/40",
-                  iconColor: "text-[#5AD07A]",
-                  delay: 0.3
-                }
-              ].map((benefit, i) => (
-                <div
-                  key={i}
-                  className="group"
-                  onMouseEnter={() => setHoveredCard(i)}
-                  onMouseLeave={() => setHoveredCard(null)}
-                  style={{ animation: `slideInUp 0.8s ease-out ${0.6 + benefit.delay}s both` }}
-                >
-                  <Card className={`h-full p-8 bg-gradient-to-br ${benefit.color} backdrop-blur-sm border ${benefit.borderColor} hover:border-white/30 transition-all duration-500 cursor-pointer overflow-hidden relative`}>
-                    {/* Hover Background Glow */}
-                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                         style={{
-                           background: `radial-gradient(circle at center, ${benefit.iconColor}/10 0%, transparent 70%)`,
-                           pointerEvents: 'none'
-                         }}></div>
-
-                    <div className="relative z-10">
-                      {/* Icon */}
-                      <div className="mb-6 inline-block p-3 bg-white/5 rounded-xl group-hover:bg-white/10 transition-all duration-300 group-hover:scale-110">
-                        <benefit.icon className={`h-8 w-8 ${benefit.iconColor} transition-transform duration-300 group-hover:rotate-6`} />
-                      </div>
-
-                      {/* Subtitle */}
-                      <div className="text-xs text-gray-400 uppercase tracking-widest mb-2 font-semibold group-hover:text-gray-300 transition-colors duration-300">
-                        {benefit.subtitle}
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="font-bold text-2xl mb-3 text-white group-hover:text-brand-sky-blue transition-colors duration-300">
-                        {benefit.title}
-                      </h3>
-
-                      {/* Description */}
-                      <p className="text-gray-300 text-sm leading-relaxed group-hover:text-gray-200 transition-colors duration-300">
-                        {benefit.description}
-                      </p>
-
-                      {/* Bottom accent line */}
-                      <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue group-hover:w-full transition-all duration-500"></div>
-                    </div>
-                  </Card>
-                </div>
-              ))}
-            </section>
-
-            {/* Stats Section - Individual Cards */}
-            <section className="max-w-6xl mx-auto mb-24 grid md:grid-cols-3 gap-6">
-              {[
-                {
-                  number: "500+",
-                  label: "UK Builders Helped",
-                  icon: Hammer,
-                  color: "text-[#5BA3D0]",
-                  bgColor: "from-[#0D2A52] to-[#071636]"
-                },
-                {
-                  number: "£45K",
-                  label: "Average Annual Savings",
-                  icon: Shield,
-                  color: "text-[#5AD07A]",
-                  bgColor: "from-[#1A4D36] to-[#0D2318]"
-                },
-                {
-                  number: "90 Days",
-                  label: "To See Results",
-                  icon: Wrench,
-                  color: "text-[#FFB84D]",
-                  bgColor: "from-[#4D3A0D] to-[#261A07]"
-                }
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  style={{ animation: `slideInUp 0.8s ease-out ${1.2 + i * 0.1}s both` }}
-                  className="group"
-                >
-                  <Card className={`h-full p-8 bg-gradient-to-br ${stat.bgColor} backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all duration-500 cursor-pointer overflow-hidden relative`}>
-                    {/* Icon Container */}
-                    <div className="mb-8 flex justify-center">
-                      <div className="p-4 bg-white/5 rounded-2xl group-hover:bg-white/10 transition-all duration-300 group-hover:scale-110">
-                        <stat.icon className={`h-12 w-12 ${stat.color} transition-transform duration-300 group-hover:rotate-12`} />
-                      </div>
-                    </div>
-
-                    {/* Number */}
-                    <div className={`text-6xl font-extrabold mb-4 text-center ${stat.color} group-hover:scale-110 transition-all duration-300`}>
-                      {stat.number}
-                    </div>
-
-                    {/* Label */}
-                    <div className="text-sm text-gray-300 uppercase tracking-wider font-medium text-center group-hover:text-white transition-colors duration-300">
-                      {stat.label}
-                    </div>
-
-                    {/* Bottom accent line */}
-                    <div className="absolute bottom-0 left-0 w-0 h-1 bg-gradient-to-r from-transparent to-white/30 group-hover:w-full transition-all duration-500"></div>
-                  </Card>
-                </div>
-              ))}
-            </section>
-
-            {/* Testimonial Section */}
-            <section className="max-w-4xl mx-auto mb-24" style={{ animation: "slideInUp 0.8s ease-out 1.6s both" }}>
-              <Card className="p-10 md:p-14 bg-gradient-to-br from-[#0D2A52] to-[#071636] backdrop-blur-xl border border-[#1E4976]/40 shadow-2xl shadow-[#0D2A52]/20 relative overflow-hidden group hover:border-[#2E6F99]/70 hover:shadow-[#0D2A52]/40 transition-all duration-500">
-                {/* Top Accent Line */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#5BA3D0] to-transparent group-hover:via-[#62B6FF] transition-all duration-500"></div>
-
-                {/* Testimonial Content */}
-                <div className="flex flex-col md:flex-row items-start gap-8">
-                  {/* Avatar */}
-                  <div className="flex-shrink-0">
-                    <div className="h-20 w-20 rounded-xl bg-gradient-to-br from-[#5BA3D0] to-[#1E6FA6] flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-[#5BA3D0]/40 group-hover:shadow-[#5BA3D0]/60 transition-all duration-300 group-hover:scale-110">
-                      MC
-                    </div>
-                  </div>
-
-                  {/* Quote */}
-                  <div className="flex-1">
-                    {/* Stars */}
-                    <div className="flex items-center gap-1.5 mb-4">
-                      {[...Array(5)].map((_, i) => (
-                        <Sparkles key={i} className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                      ))}
-                    </div>
-
-                    {/* Quote Text */}
-                    <p className="text-lg md:text-xl mb-6 leading-relaxed text-gray-200 italic group-hover:text-white transition-colors duration-300">
-                      "The A-Team diagnostic showed me I was losing <span className="text-[#5BA3D0] font-bold not-italic">£60K a year</span> through poor scheduling and unreliable subcontractors. We fixed it in 60 days. Absolute game-changer for my business."
-                    </p>
-
-                    {/* Author */}
-                    <div>
-                      <div className="font-bold text-white text-lg">Mark Cooper</div>
-                      <div className="text-sm text-[#5BA3D0]/90 font-medium">Managing Director, Cooper Construction Ltd</div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </section>
-
-            {/* Feature Highlights */}
-            <section className="max-w-6xl mx-auto mb-24">
-              <div className="grid md:grid-cols-3 gap-6">
-                {[
-                  {
-                    icon: Lightbulb,
-                    title: "Smart Algorithm",
-                    description: "Our AI-powered scoring identifies your specific problem areas with surgical precision"
-                  },
-                  {
-                    icon: Briefcase,
-                    title: "Business Focused",
-                    description: "Designed by business coaches who understand the trades industry inside and out"
-                  },
-                  {
-                    icon: Target,
-                    title: "Proven Results",
-                    description: "See immediate £20K-£50K improvements with our top 3 prioritized fixes"
-                  }
-                ].map((feature, i) => (
-                  <div
-                    key={i}
-                    className="group"
-                    style={{ animation: `slideInUp 0.8s ease-out ${1.8 + i * 0.1}s both` }}
-                  >
-                    <div className="p-6 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-sm border border-white/10 rounded-xl hover:border-brand-vivid-blue/30 transition-all duration-500 cursor-pointer">
-                      <div className="mb-4 inline-block p-2.5 bg-brand-vivid-blue/10 rounded-lg group-hover:bg-brand-vivid-blue/20 transition-all duration-300 group-hover:scale-110">
-                        <feature.icon className="h-6 w-6 text-brand-vivid-blue group-hover:text-brand-sky-blue transition-colors duration-300" />
-                      </div>
-                      <h4 className="font-bold text-lg text-white mb-2 group-hover:text-brand-sky-blue transition-colors duration-300">
-                        {feature.title}
-                      </h4>
-                      <p className="text-gray-400 text-sm leading-relaxed group-hover:text-gray-300 transition-colors duration-300">
-                        {feature.description}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Final CTA Section */}
-            <section className="text-center max-w-3xl mx-auto mb-20" style={{ animation: "slideInUp 0.8s ease-out 2.0s both" }}>
-              <div className="p-12 md:p-16 rounded-2xl bg-gradient-to-br from-[#0D2A52] to-[#071636] backdrop-blur-xl border border-[#1E4976]/40 hover:border-[#2E6F99]/70 hover:shadow-2xl hover:shadow-[#0D2A52]/40 transition-all duration-500">
-                <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
-                  Ready to Fix Your Labour Pipeline?
-                </h2>
-                <p className="text-gray-300 mb-10 text-lg leading-relaxed">
-                  Take the 3-minute diagnostic today and discover exactly where you're losing money—and how to fix it.
-                </p>
-                <Button
-                  size="lg"
-                  className="h-14 px-10 text-base font-bold bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white border-0 rounded-lg shadow-xl shadow-brand-vivid-blue/40 hover:shadow-brand-vivid-blue/60 transform hover:scale-105 active:scale-95 transition-all duration-300 group cursor-pointer"
-                  onClick={() => setShowChat(true)}
-                >
-                  <Sparkles className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform duration-300" />
-                  Start Free Diagnostic
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-2 transition-transform duration-300" />
-                </Button>
-              </div>
-            </section>
-          </>
-        ) : (
-          <DiagnosticChat onBack={() => setShowChat(false)} />
-        )}
+        {/* Embedded Chat - Always Visible */}
+        <div className="max-w-5xl mx-auto mb-16">
+          <DiagnosticChat embedded={true} />
+        </div>
       </main>
 
+      {/* Testimonials Section Below Chat */}
+      <section className="relative z-10 bg-gray-50 py-16 mt-8">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-4">What Builders Are Saying</h2>
+            <p className="text-gray-600 text-lg">Join 500+ UK builders who've transformed their labour pipeline</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Mark Cooper",
+                title: "Managing Director, Cooper Construction Ltd",
+                text: "The A-Team diagnostic showed me I was losing £60K a year through poor scheduling and unreliable subcontractors. We fixed it in 60 days. Absolute game-changer for my business.",
+                rating: 5
+              },
+              {
+                name: "Sarah Mitchell",
+                title: "Owner, Mitchell & Sons Building",
+                text: "Couldn't believe how quickly we identified our labour pipeline problems. The recommendations were spot-on and easy to implement. Already seeing results after 30 days.",
+                rating: 5
+              },
+              {
+                name: "James Patterson",
+                title: "Director, Patterson Homes",
+                text: "Fantastic diagnostic tool. Really thorough and the insights into our culture and systems were eye-opening. Worth every penny of the free assessment!",
+                rating: 5
+              }
+            ].map((testimonial, i) => (
+              <Card key={i} className="p-8 bg-white border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
+                {/* Stars */}
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, j) => (
+                    <svg key={j} className="w-5 h-5 text-amber-500 fill-current" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                    </svg>
+                  ))}
+                </div>
+
+                {/* Review Text */}
+                <p className="text-gray-800 mb-6 italic leading-relaxed">"{testimonial.text}"</p>
+
+                {/* Author */}
+                <div className="border-t-2 border-gray-100 pt-4">
+                  <p className="font-bold text-brand-dark-navy">{testimonial.name}</p>
+                  <p className="text-sm text-gray-600">{testimonial.title}</p>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="relative z-10 border-t border-white/5 bg-gradient-to-b from-transparent to-brand-dark-navy/30 backdrop-blur-sm mt-32">
+      <footer className="relative z-10 border-t-2 border-gray-200 bg-white mt-32">
         <div className="container mx-auto px-4 py-12 max-w-7xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="text-sm text-gray-400 text-center md:text-left">
+            <div className="text-sm text-gray-600 text-center md:text-left">
               © 2025 Develop Coaching. Helping UK trades businesses scale with confidence.
             </div>
             <div className="flex items-center gap-8 text-sm">
@@ -355,7 +147,7 @@ export default function Home() {
                 href="https://developcoaching.co.uk"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-brand-sky-blue transition-all duration-300 hover:underline"
+                className="text-gray-700 hover:text-brand-vivid-blue transition-all duration-300 hover:underline font-medium"
                 data-testid="link-develop-coaching"
               >
                 Develop Coaching
@@ -364,7 +156,7 @@ export default function Home() {
                 href="https://developcoaching.co.uk/schedule-a-call"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-400 hover:text-brand-sky-blue transition-all duration-300 hover:underline"
+                className="text-gray-700 hover:text-brand-vivid-blue transition-all duration-300 hover:underline font-medium"
                 data-testid="link-schedule-call"
               >
                 Book a Call
