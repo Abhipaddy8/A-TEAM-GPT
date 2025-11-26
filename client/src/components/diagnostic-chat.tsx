@@ -785,8 +785,9 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                   <p className={`text-base leading-relaxed whitespace-pre-line ${message.role === "user" ? "text-white" : "text-gray-800"}`}>
                     {message.role === "assistant"
                       ? message.content
-                          .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
-                          .replace(/\*([^*]+)\*/g, '$1')      // Remove *italics*
+                          .replace(/<!--[\s\S]*?-->/g, '')     // Remove HTML comments
+                          .replace(/\*\*([^*]+)\*\*/g, '$1')   // Remove **bold**
+                          .replace(/\*([^*]+)\*/g, '$1')       // Remove *italics*
                           .replace(/`([^`]+)`/g, '$1')         // Remove `code`
                           .replace(/```[\s\S]*?```/g, '')      // Remove code blocks
                       : message.content
