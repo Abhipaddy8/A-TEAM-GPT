@@ -790,7 +790,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                           .replace(/\*([^*]+)\*/g, '$1')       // Remove *italics*
                           .replace(/`([^`]+)`/g, '$1')         // Remove `code`
                           .replace(/```[\s\S]*?```/g, '')      // Remove code blocks
-                          .replace(/\n{2,}/g, '\n')            // Collapse multiple blank lines into one
+                          .replace(/\n\s*\n+/g, '\n')          // Collapse multiple blank lines (including hidden spaces)
                           .trim()                               // Remove leading/trailing whitespace
                       : message.content
                     }
