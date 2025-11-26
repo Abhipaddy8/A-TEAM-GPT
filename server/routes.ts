@@ -382,7 +382,9 @@ SCORING THEIR PREVIOUS ANSWER (Question ${questionsAsked}):
 
 Be conversational. Use UK English. Keep it SHORT.
 
-Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": [your score 1-10], "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": [score], "answer": "[brief summary of their answer]"}}}-->`;
+CRITICAL: For the JSON marker, extractedScore MUST be a single number 1-10, NOT an array. Same for the score inside collectedData.
+Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": 5, "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": 5, "answer": "[brief summary of their answer]"}}}-->
+Replace 5 with your actual score 1-10 based on their answer.`;
         }
       } else if (isDiagnosticMode && questionsAsked >= 7) {
         systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.

@@ -14,7 +14,7 @@ import ScoreWidget from "./score-widget";
 interface Message {
   role: "assistant" | "user";
   content: string;
-  widget?: "score-display" | "email-form" | "phone-form" | "calendar";
+  widget?: "score-display" | "email-form" | "phone-form" | "calendar" | "skip-options";
   data?: any;
 }
 
@@ -257,6 +257,10 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   }>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  
+  // Use a ref to track accumulated diagnostic data across async updates
+  // This solves the closure stale state problem in mutation callbacks
+  const accumulatedDataRef = useRef<Record<string, any>>({});
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -306,20 +310,34 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     onSuccess: (response: any) => {
       const aiMessage = response.message;
       
+      // Merge new collected data into the ref (survives across closures)
+      if (response.diagnosticUpdate?.collectedData) {
+        accumulatedDataRef.current = {
+          ...accumulatedDataRef.current,
+          ...response.diagnosticUpdate.collectedData,
+        };
+      }
+      
+      console.log('[Chat] Response received:', {
+        isComplete: response.isComplete,
+        questionsAsked: response.diagnosticUpdate?.questionsAsked,
+        newCollectedData: response.diagnosticUpdate?.collectedData,
+        accumulatedData: accumulatedDataRef.current
+      });
+      
       if (response.diagnosticUpdate) {
         setDiagnosticState(prev => ({
           ...prev,
           questionsAsked: response.diagnosticUpdate.questionsAsked || prev.questionsAsked + 1,
-          collectedData: {
-            ...prev.collectedData,
-            ...response.diagnosticUpdate.collectedData,
-          },
+          collectedData: { ...accumulatedDataRef.current },
         }));
       }
 
       if (response.isComplete) {
         setDiagnosticComplete(true);
-        const scores = calculateScoresFromData(diagnosticState.collectedData);
+        // Use the ref which has ALL accumulated data from all responses
+        console.log('[Diagnostic Complete] Final collected data:', JSON.stringify(accumulatedDataRef.current));
+        const scores = calculateScoresFromData(accumulatedDataRef.current);
         setDiagnosticData(scores);
         
         setMessages(prev => [
@@ -327,7 +345,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
           { role: "assistant", content: aiMessage },
           {
             role: "assistant",
-            content: "Here's your quick score breakdown. Enter your email below to get the full personalised report with detailed recommendations.",
+            content: "Want deeper insights? Click below to get your detailed email report with personalised recommendations.",
             widget: "score-display",
             data: scores,
           },
@@ -414,6 +432,10 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
           content: "Done! Check your phone - the training link is on its way.\n\nNow, if you're serious about fixing your labour pipeline, let's get you booked in for a free Scale Session. I'll personally walk you through how to implement the fixes in your report.\n\nPick a time below that works for you:",
           widget: "calendar",
         },
+        {
+          role: "assistant",
+          content: "After you've booked, feel free to keep chatting - I'm here to help with any questions about your business, recruitment, or managing your team!",
+        },
       ]);
       setShowCalendar(true);
     },
@@ -428,15 +450,47 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
 
   const calculateScoresFromData = (data: Record<string, any>) => {
     const defaultScore = 5;
-    const scores = {
-      tradingCapacity: data.tradingCapacity?.score || defaultScore,
-      reliability: data.reliability?.score || defaultScore,
-      recruitment: data.recruitment?.score || defaultScore,
-      systems: data.systems?.score || defaultScore,
-      profitability: data.profitability?.score || defaultScore,
-      onboarding: data.onboarding?.score || defaultScore,
-      culture: data.culture?.score || defaultScore,
+    
+    // Map AI-collected data keys to our display categories
+    // AI collects: turnover, projects, reliability, recruitment, systems, timeSpent, culture
+    // We display: tradingCapacity, reliability, recruitment, systems, profitability, onboarding, culture
+    
+    // Helper to extract score value - handles arrays, objects with score, or direct numbers
+    const extractScoreValue = (scoreData: any): number => {
+      if (scoreData === undefined || scoreData === null) return defaultScore;
+      if (typeof scoreData === 'number') return scoreData;
+      if (Array.isArray(scoreData)) {
+        // AI sometimes returns score as [7] or similar
+        const firstNum = scoreData.find((v: any) => typeof v === 'number');
+        return firstNum !== undefined ? firstNum : defaultScore;
+      }
+      // Try to parse as number if it's a string
+      const parsed = parseInt(scoreData, 10);
+      return isNaN(parsed) ? defaultScore : parsed;
     };
+    
+    const getScore = (keys: string[]) => {
+      for (const key of keys) {
+        if (data[key]?.score !== undefined) {
+          return extractScoreValue(data[key].score);
+        }
+      }
+      return defaultScore;
+    };
+    
+    const scores = {
+      tradingCapacity: getScore(['turnover', 'projects', 'tradingCapacity']),
+      reliability: getScore(['reliability']),
+      recruitment: getScore(['recruitment']),
+      systems: getScore(['systems']),
+      profitability: getScore(['timeSpent', 'profitability']),
+      onboarding: getScore(['projects', 'onboarding']),
+      culture: getScore(['culture']),
+    };
+
+    // Debug logging
+    console.log('[Scores] Input data:', JSON.stringify(data));
+    console.log('[Scores] Calculated scores:', JSON.stringify(scores));
 
     const values = Object.values(scores);
     const average = values.reduce((sum, s) => sum + s, 0) / values.length;
@@ -448,23 +502,37 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return "red";
     };
 
+    // Generate dynamic recommendations based on lowest scores
+    const scoreEntries = Object.entries(scores).sort((a, b) => a[1] - b[1]);
+    const lowestAreas = scoreEntries.slice(0, 3);
+    
+    const recommendationTemplates: Record<string, { title: string; explanation: string; impact: string }> = {
+      tradingCapacity: { title: "Optimise project capacity", explanation: "Balance workload to match your team's capacity", impact: "Reduce stress, increase profitability" },
+      reliability: { title: "Build a reliable subbie network", explanation: "Create a vetted pool of 3-5 go-to subbies for each trade", impact: "Reduce no-shows by 50%" },
+      recruitment: { title: "Fix your recruitment pipeline", explanation: "Create a consistent system to attract skilled trades", impact: "Stop chasing workers, attract talent" },
+      systems: { title: "Implement simple scheduling", explanation: "Use a shared calendar or app to coordinate teams", impact: "Save 5+ hours per week" },
+      profitability: { title: "Reduce time on labour issues", explanation: "Document processes and empower your team to solve problems", impact: "Free up 10+ hours weekly" },
+      onboarding: { title: "Create an onboarding checklist", explanation: "Standard process for new team members", impact: "Faster ramp-up, better retention" },
+      culture: { title: "Improve team culture", explanation: "Regular check-ins and recognition for good work", impact: "Lower turnover, higher morale" },
+    };
+    
+    const topRecommendations = lowestAreas.map(([area]) => 
+      recommendationTemplates[area] || recommendationTemplates.reliability
+    );
+
     return {
       overallScore,
       scoreColor: getColor(overallScore / 10),
       sectionScores: {
-        tradingCapacity: { score: scores.tradingCapacity, color: getColor(scores.tradingCapacity), commentary: "Based on your project volume" },
-        reliability: { score: scores.reliability, color: getColor(scores.reliability), commentary: "Subbie punctuality and completion" },
-        recruitment: { score: scores.recruitment, color: getColor(scores.recruitment), commentary: "Ability to find skilled labour" },
-        systems: { score: scores.systems, color: getColor(scores.systems), commentary: "Scheduling and management tools" },
-        profitability: { score: scores.profitability, color: getColor(scores.profitability), commentary: "Time spent on labour issues" },
-        onboarding: { score: scores.onboarding, color: getColor(scores.onboarding), commentary: "Training and integration" },
-        culture: { score: scores.culture, color: getColor(scores.culture), commentary: "Team morale and retention" },
+        tradingCapacity: { score: scores.tradingCapacity, color: getColor(scores.tradingCapacity), commentary: data.turnover?.answer || data.projects?.answer || "Based on your project volume" },
+        reliability: { score: scores.reliability, color: getColor(scores.reliability), commentary: data.reliability?.answer || "Subbie punctuality and completion" },
+        recruitment: { score: scores.recruitment, color: getColor(scores.recruitment), commentary: data.recruitment?.answer || "Ability to find skilled labour" },
+        systems: { score: scores.systems, color: getColor(scores.systems), commentary: data.systems?.answer || "Scheduling and management tools" },
+        profitability: { score: scores.profitability, color: getColor(scores.profitability), commentary: data.timeSpent?.answer || "Time spent on labour issues" },
+        onboarding: { score: scores.onboarding, color: getColor(scores.onboarding), commentary: "Training and integration process" },
+        culture: { score: scores.culture, color: getColor(scores.culture), commentary: data.culture?.answer || "Team morale and retention" },
       },
-      topRecommendations: [
-        { title: "Build a reliable subbie network", explanation: "Create a vetted pool of 3-5 go-to subbies for each trade", impact: "Reduce no-shows by 50%" },
-        { title: "Implement simple scheduling", explanation: "Use a shared calendar or app to coordinate teams", impact: "Save 5+ hours per week" },
-        { title: "Create an onboarding checklist", explanation: "Standard process for new team members", impact: "Faster ramp-up, better retention" },
-      ],
+      topRecommendations,
       labourLeakProjection: {
         annualLeak: overallScore < 50 ? "£60,000-£90,000" : overallScore < 70 ? "£30,000-£50,000" : "£15,000-£25,000",
         improvementRange: "£15,000-£35,000",
@@ -508,12 +576,17 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       content: m.content,
     }));
 
+    // Use the ref for accurate accumulated data, combined with current state for other fields
+    const currentDiagnosticState = {
+      isActive: diagnosticState.isActive || wantsDiagnostic,
+      questionsAsked: diagnosticState.questionsAsked,
+      collectedData: { ...accumulatedDataRef.current },
+    };
+
     chatMutation.mutate({
       message: userMessage,
       conversationHistory,
-      diagnosticState: !diagnosticState.isActive && wantsDiagnostic 
-        ? { ...diagnosticState, isActive: true }
-        : diagnosticState,
+      diagnosticState: currentDiagnosticState,
     });
   };
 
@@ -579,11 +652,38 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       { role: "user", content: "Skip for now" },
       {
         role: "assistant",
-        content: "No problem! Your report is on its way. When you're ready to discuss implementing those fixes, book a free Scale Session below - I'll walk you through it personally.",
+        content: "No problem! Your report is on its way.\n\nWhat would you like to do next?",
+        widget: "skip-options",
+      },
+    ]);
+  };
+
+  const handleBookScaleSession = () => {
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: "Book Scale Session" },
+      {
+        role: "assistant",
+        content: "Great choice! Pick a time below that works for you. I'll personally walk you through how to implement the fixes in your report.",
         widget: "calendar",
+      },
+      {
+        role: "assistant",
+        content: "After you've booked, feel free to keep chatting - what else can I help you with?",
       },
     ]);
     setShowCalendar(true);
+  };
+
+  const handleContinueChatting = () => {
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: "Continue Chatting" },
+      {
+        role: "assistant",
+        content: "Happy to keep chatting! What else can I help you with? Whether it's questions about your report, recruitment strategies, managing subbies, or anything else about growing your trades business - fire away!",
+      },
+    ]);
   };
 
   const progress = diagnosticState.isActive ? (diagnosticState.questionsAsked / 7) * 100 : 0;
@@ -641,8 +741,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                 {message.widget === "email-form" && (
                   <form onSubmit={handleEmailSubmit} className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
                     <div className="text-center mb-4">
-                      <p className="text-brand-dark-navy font-bold text-lg">Get Your Full Report</p>
-                      <p className="text-gray-600 text-sm">We'll email you detailed insights and recommendations</p>
+                      <p className="text-brand-dark-navy font-bold text-lg">Want Deeper Insights?</p>
+                      <p className="text-gray-600 text-sm">Click to get your detailed email report</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
@@ -662,7 +762,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                       {submitEmailMutation.isPending ? (
                         <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending Report...</>
                       ) : (
-                        <><Sparkles className="h-5 w-5 mr-2" />Send My Report</>
+                        <><Sparkles className="h-5 w-5 mr-2" />Send Me Deeper Insights</>
                       )}
                     </Button>
                   </form>
@@ -700,6 +800,33 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                   </div>
                 )}
 
+                {message.widget === "skip-options" && (
+                  <div className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
+                    <div className="text-center mb-4">
+                      <p className="text-brand-dark-navy font-bold text-lg">What would you like to do next?</p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <Button 
+                        onClick={handleBookScaleSession} 
+                        className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold py-6"
+                        data-testid="button-book-scale-session"
+                      >
+                        <Target className="h-5 w-5 mr-2" />
+                        Book Scale Session
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        onClick={handleContinueChatting}
+                        className="w-full border-2 py-6"
+                        data-testid="button-continue-chatting"
+                      >
+                        <Sparkles className="h-5 w-5 mr-2" />
+                        Continue Chatting
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {message.widget === "calendar" && (
                   <div className="mt-4">
                     <CalendarEmbed />
@@ -729,21 +856,19 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
           <div ref={messagesEndRef} />
         </div>
 
-        {!showCalendar && (
-          <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 mt-4">
-            <Input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              disabled={isLoading}
-              className="flex-1 border-2"
-              data-testid="input-chat"
-            />
-            <Button type="submit" disabled={isLoading || !input.trim()} data-testid="button-send">
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            </Button>
-          </form>
-        )}
+        <form onSubmit={(e) => { e.preventDefault(); handleSend(); }} className="flex gap-2 mt-4">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={showCalendar ? "Still have questions? Ask away..." : "Type your message..."}
+            disabled={isLoading}
+            className="flex-1 border-2"
+            data-testid="input-chat"
+          />
+          <Button type="submit" disabled={isLoading || !input.trim()} data-testid="button-send">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </form>
       </Card>
 
       {showCalendar && (
