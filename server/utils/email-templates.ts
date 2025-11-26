@@ -342,7 +342,7 @@ export function generateReportEmailHTML(reportData: PdfReportData): string {
       }</p>
 
       <!-- Section Breakdown -->
-      <h2 class="section-title">🔍 Your Score Breakdown</h2>
+      <h2 class="section-title">🔍 Your Score Breakdown & Actionable Insights</h2>
       ${Object.entries(reportData.sectionScores)
         .map(
           ([key, section]) => `
@@ -351,7 +351,10 @@ export function generateReportEmailHTML(reportData: PdfReportData): string {
           <div class="section-name">${formatSectionName(key)}</div>
           <div class="section-score ${section.color}">${section.score}/10</div>
         </div>
-        <div class="section-commentary">${section.commentary}</div>
+        <div class="section-commentary" style="margin-bottom: 12px;">${section.commentary}</div>
+        <div style="background-color: ${section.color === 'red' ? '#FEF2F2' : section.color === 'amber' ? '#FFFBEB' : '#F0FDF4'}; padding: 12px 15px; border-radius: 6px; margin-bottom: 10px; font-size: 14px; line-height: 1.6;">
+          ${getImprovementInsights(key, section.color as "red" | "amber" | "green")}
+        </div>
         <div class="priority-badge ${section.color}">
           ${
             section.color === "red"
@@ -438,4 +441,55 @@ function formatSectionName(key: string): string {
     culture: "Team Culture & Morale",
   };
   return nameMap[key] || key.replace(/([A-Z])/g, " $1").trim();
+}
+
+function getImprovementInsights(sectionKey: string, color: "red" | "amber" | "green"): string {
+  const insights: Record<string, Record<string, string>> = {
+    tradingCapacity: {
+      red: `<strong>Quick Win:</strong> Create a simple "capacity dashboard" - even a spreadsheet works. Track active projects, confirmed start dates, and labour allocation weekly. Most builders lose £15K+ annually from overcommitting or underutilising their teams. <em>Start this week: List every project and the labour hours required.</em>`,
+      amber: `<strong>Next Level:</strong> You're managing workload, but there's room to optimise. Consider implementing a 2-week look-ahead system to spot gaps before they cost you. Block out "buffer days" for overruns - it'll reduce emergency costs by 20-30%.`,
+      green: `<strong>Maintain Your Edge:</strong> Strong capacity management is rare. To stay ahead, review your utilisation monthly and build in quarterly planning sessions. Consider forecasting 8 weeks out to capture bigger, more profitable projects.`
+    },
+    reliability: {
+      red: `<strong>Quick Win:</strong> Implement a "3-strike system" today. Document every no-show or late arrival. After 3 incidents, that subbie goes to the bottom of your call list. Also: always have 2 backup contacts per trade. <em>This week's action: Create a reliability scorecard for your top 10 subbies.</em>`,
+      amber: `<strong>Next Level:</strong> You've got some reliable people, but gaps remain. Pre-agree consequences for no-shows (e.g., 10% rate cut next job). Send reminder texts 48 hours AND 24 hours before start. Build deeper relationships with your best 5 subbies - they're worth protecting.`,
+      green: `<strong>Maintain Your Edge:</strong> Reliable labour is your competitive advantage. Keep nurturing those relationships - quarterly catch-ups, fair rates, prompt payments. Consider offering incentive bonuses for 100% attendance records to lock in your A-team.`
+    },
+    recruitment: {
+      red: `<strong>Quick Win:</strong> Stop relying on word-of-mouth alone. Post on Rated People, MyBuilder, and local Facebook trade groups weekly. Create a simple "always recruiting" habit - even when you're busy. <em>This week's action: Post 3 job ads across different platforms.</em>`,
+      amber: `<strong>Next Level:</strong> You're finding people, but it's hit-or-miss. Develop a "talent pipeline" spreadsheet of potential subbies you've met but haven't used yet. Reach out monthly even when you don't need them - when you DO need them, they'll be ready.`,
+      green: `<strong>Maintain Your Edge:</strong> Strong recruitment is a growth enabler. To scale further, consider becoming known as "the best company to work with" - faster payments, fair rates, good communication. Word spreads fast in trades circles.`
+    },
+    systems: {
+      red: `<strong>Quick Win:</strong> Ditch the paper diary. Get a free tool like Trello, Notion, or even Google Calendar shared with your team. Start tracking jobs, workers, and materials in ONE place. <em>This week's action: Set up a simple project board and add your current jobs.</em>`,
+      amber: `<strong>Next Level:</strong> You have some systems, but they're probably inconsistent. Pick ONE area to systemise properly (scheduling, invoicing, or job tracking). Create a standard process and stick to it for 30 days before adding more.`,
+      green: `<strong>Maintain Your Edge:</strong> Good systems = less stress and higher profits. Consider automating repetitive tasks (quotes, follow-ups, reminders). Review your tech stack annually - better tools emerge all the time.`
+    },
+    profitability: {
+      red: `<strong>Quick Win:</strong> Track your labour cost per project for the next 3 jobs. Include YOUR time spent firefighting. Most builders underestimate this by 30%+. You can't fix what you can't see. <em>This week's action: Calculate your true hourly cost including management time.</em>`,
+      amber: `<strong>Next Level:</strong> You're aware of labour costs but not maximising margins. Review your pricing - are you charging enough for the hassle of managing subbies? Add a 10-15% "management overhead" to quotes if you're not already.`,
+      green: `<strong>Maintain Your Edge:</strong> Strong labour profitability means you can invest in growth. Consider using the savings to offer slightly better rates to your best subbies - locking in reliability often beats chasing the cheapest quote.`
+    },
+    onboarding: {
+      red: `<strong>Quick Win:</strong> Create a one-page "First Day Checklist" covering site access, safety requirements, parking, and who to contact. Text it to new subbies 24 hours before they start. <em>This week's action: Write your checklist and use it on your next new starter.</em>`,
+      amber: `<strong>Next Level:</strong> You're doing some onboarding but it's inconsistent. Develop a standard 30-minute "site induction" covering expectations, quality standards, and communication preferences. Consistency builds respect.`,
+      green: `<strong>Maintain Your Edge:</strong> Professional onboarding sets you apart. Consider creating a "Welcome Pack" for new subbies covering how you work, payment terms, and what makes a great relationship. It'll attract better talent.`
+    },
+    culture: {
+      red: `<strong>Quick Win:</strong> Start with simple recognition. A text saying "Great work today" costs nothing but means everything. Buy the team a round of bacon sarnies on Fridays. Small gestures reduce turnover dramatically. <em>This week's action: Send 3 genuine thank-you messages.</em>`,
+      amber: `<strong>Next Level:</strong> You've got reasonable morale but could strengthen it. Consider a brief monthly team catch-up (even 15 minutes on site). Ask for feedback - "What would make your job easier?" People stay where they feel heard.`,
+      green: `<strong>Maintain Your Edge:</strong> Great culture is your secret weapon for retention and referrals. Keep investing in relationships. Consider an annual thank-you event or Christmas bonus for your reliable regulars - loyalty compounds over time.`
+    }
+  };
+
+  const sectionInsights = insights[sectionKey];
+  if (!sectionInsights) {
+    return color === "red" 
+      ? "<strong>Action Required:</strong> This area needs immediate attention. Small improvements here can yield significant savings."
+      : color === "amber"
+        ? "<strong>Opportunity:</strong> Room for improvement exists. Focus on consistency and documentation."
+        : "<strong>Well Done:</strong> Keep doing what's working and look for ways to optimise further.";
+  }
+  
+  return sectionInsights[color];
 }
