@@ -762,7 +762,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
           {messages.map((message, index) => (
             <div
               key={index}
-              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-500`}
+              className={`flex items-start ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-4 duration-500`}
             >
               <div
                 className={`max-w-[85%] rounded-2xl p-5 shadow-lg ${
