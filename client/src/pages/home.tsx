@@ -73,7 +73,7 @@ export default function Home() {
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto font-medium leading-relaxed">
+          <p className="text-xl md:text-2xl lg:text-2xl text-gray-600 max-w-3xl mx-auto font-medium leading-relaxed">
             The "labour shortage" isn't the whole story. Use our <span className="text-brand-vivid-blue font-bold">A-Team Diagnostic</span> to pinpoint the leaks in your hiring process so you can stop chasing workers and start attracting them.
           </p>
         </section>
