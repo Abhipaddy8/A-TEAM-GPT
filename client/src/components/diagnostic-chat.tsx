@@ -250,6 +250,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   const [sessionId] = useState(() => crypto.randomUUID());
   const [storedEmail, setStoredEmail] = useState("");
   const [showCalendar, setShowCalendar] = useState(false);
+  const [emailSubmitted, setEmailSubmitted] = useState(false);
+  const [phoneSubmitted, setPhoneSubmitted] = useState(false);
   const [utmParams, setUtmParams] = useState<{
     utmSource?: string;
     utmMedium?: string;
@@ -344,7 +346,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
         }));
       }
 
-      if (response.isComplete) {
+      if (response.isComplete && !emailSubmitted) {
+        // Only show widgets on first completion, not when continuing to chat later
         setDiagnosticComplete(true);
         // Use the ref which has ALL accumulated data from all responses
         console.log('[Diagnostic Complete] Final collected data:', JSON.stringify(accumulatedDataRef.current));
@@ -367,6 +370,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
           },
         ]);
       } else {
+        // Either not complete yet, OR already submitted email - just show AI response
         setMessages(prev => [...prev, { role: "assistant", content: aiMessage }]);
       }
       
@@ -398,6 +402,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return res.json();
     },
     onSuccess: () => {
+      setEmailSubmitted(true);
       setMessages(prev => [
         ...prev,
         {
@@ -436,19 +441,15 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       return res.json();
     },
     onSuccess: () => {
+      setPhoneSubmitted(true);
       setMessages(prev => [
         ...prev,
         {
           role: "assistant",
-          content: "Done! Check your phone - the training link is on its way.\n\nNow, if you're serious about fixing your labour pipeline, let's get you booked in for a free Scale Session. I'll personally walk you through how to implement the fixes in your report.\n\nPick a time below that works for you:",
-          widget: "calendar",
-        },
-        {
-          role: "assistant",
-          content: "After you've booked, feel free to keep chatting - I'm here to help with any questions about your business, recruitment, or managing your team!",
+          content: "Done! Check your phone - the training link is on its way.\n\nNow, what would you like to do next?",
+          widget: "skip-options",
         },
       ]);
-      setShowCalendar(true);
     },
     onError: () => {
       toast({

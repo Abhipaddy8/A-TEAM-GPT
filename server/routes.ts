@@ -360,9 +360,10 @@ Your bonus pack reveals the exact system successful builders use.
 YOUR EXACT RESPONSE (copy this exactly):
 Here we go! Let's run your fast 7-question Trades Pipeline Diagnostic.
 
-**Question 1 of 7:** ${currentQ.question}
+Question 1 of 7: ${currentQ.question}
 
 Do NOT add anything else. Do NOT ask multiple questions. Just this.
+Do NOT use markdown formatting like **bold** or *italics*. Use plain text only.
 
 Include at the very end: <!--DIAGNOSTIC_DATA:{"questionsAsked": 1, "currentArea": "${currentQ.area}", "collectedData": {}}-->`;
         } else {
@@ -392,7 +393,7 @@ QUESTION AREA: ${prevQuestion?.area}
 YOUR RESPONSE MUST BE:
 [1-2 sentence acknowledgment of their answer]
 
-**Question ${questionNumber} of 7:** ${currentQ.question}
+Question ${questionNumber} of 7: ${currentQ.question}
 
 [DIAGNOSTIC_SCORE: X] where X is a number 1-10
 [DIAGNOSTIC_AREA: ${prevQuestion?.area}]
@@ -402,7 +403,8 @@ IMPORTANT:
 - Always include [DIAGNOSTIC_SCORE: X] with an actual score 1-10 based on their answer
 - Always include [DIAGNOSTIC_AREA: ...] with the previous question's area
 - Always include [DIAGNOSTIC_ANSWER: ...] with their answer summary
-- This score MUST match their actual situation, NOT be a default like 5`;
+- This score MUST match their actual situation, NOT be a default like 5
+- Do NOT use markdown formatting like **bold** or *italics*. Use plain text only.`;
         }
       } else if (isDiagnosticMode && questionsAsked >= 7) {
         systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.
@@ -416,6 +418,7 @@ YOUR TASK:
 4. Encourage them to enter their email to get the detailed PDF report with personalised recommendations
 
 Keep it conversational and warm. Make them feel understood and excited about the insights coming their way.
+Do NOT use markdown formatting like **bold** or *italics*. Use plain text only.
 
 Include at the end: <!--DIAGNOSTIC_COMPLETE:true-->`;
       } else {
@@ -427,7 +430,8 @@ If they seem interested in understanding their labour challenges, offer to run a
 
 If they want to book a call, encourage them to use the calendar booking below.
 
-Keep responses concise (2-4 sentences). Be conversational, not formal.`;
+Keep responses concise (2-4 sentences). Be conversational, not formal.
+Do NOT use markdown formatting like **bold**, *italics*, or numbered lists. Use plain text only.`;
       }
 
       const openaiResponse = await fetch(`${process.env.AI_INTEGRATIONS_OPENAI_BASE_URL}/chat/completions`, {
