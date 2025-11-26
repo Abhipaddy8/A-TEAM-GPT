@@ -758,7 +758,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       )}
 
       <Card className={`p-6 min-h-[500px] flex flex-col shadow-2xl ${embedded ? 'border-brand-vivid-blue/30 bg-white/95 backdrop-blur-sm' : 'border-brand-vivid-blue/20 bg-gradient-to-b from-white to-gray-50'}`}>
-        <div className="flex-1 overflow-y-auto mb-4 space-y-6" data-testid="chat-messages">
+        <div className="flex-1 overflow-y-auto mb-4 space-y-3" data-testid="chat-messages">
           {messages.map((message, index) => (
             <div
               key={index}
