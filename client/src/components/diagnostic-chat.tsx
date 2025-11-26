@@ -309,20 +309,22 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     },
     onSuccess: (response: any) => {
       const aiMessage = response.message;
-      
+
       // Merge new collected data into the ref (survives across closures)
       if (response.diagnosticUpdate?.collectedData) {
         accumulatedDataRef.current = {
           ...accumulatedDataRef.current,
           ...response.diagnosticUpdate.collectedData,
         };
+        console.log('[Chat] ✅ Merged collected data:', JSON.stringify(response.diagnosticUpdate.collectedData));
       }
-      
+
       console.log('[Chat] Response received:', {
         isComplete: response.isComplete,
         questionsAsked: response.diagnosticUpdate?.questionsAsked,
         newCollectedData: response.diagnosticUpdate?.collectedData,
-        accumulatedData: accumulatedDataRef.current
+        totalAccumulatedData: accumulatedDataRef.current,
+        hasAnyScores: Object.values(accumulatedDataRef.current).some((v: any) => v?.score !== undefined)
       });
       
       if (response.diagnosticUpdate) {
@@ -450,34 +452,43 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
 
   const calculateScoresFromData = (data: Record<string, any>) => {
     const defaultScore = 5;
-    
+
     // Map AI-collected data keys to our display categories
     // AI collects: turnover, projects, reliability, recruitment, systems, timeSpent, culture
     // We display: tradingCapacity, reliability, recruitment, systems, profitability, onboarding, culture
-    
+
     // Helper to extract score value - handles arrays, objects with score, or direct numbers
     const extractScoreValue = (scoreData: any): number => {
       if (scoreData === undefined || scoreData === null) return defaultScore;
-      if (typeof scoreData === 'number') return scoreData;
+      if (typeof scoreData === 'number') {
+        const num = parseInt(scoreData, 10);
+        return isNaN(num) ? defaultScore : num;
+      }
       if (Array.isArray(scoreData)) {
         // AI sometimes returns score as [7] or similar
         const firstNum = scoreData.find((v: any) => typeof v === 'number');
-        return firstNum !== undefined ? firstNum : defaultScore;
+        return firstNum !== undefined ? parseInt(firstNum, 10) : defaultScore;
       }
       // Try to parse as number if it's a string
       const parsed = parseInt(scoreData, 10);
       return isNaN(parsed) ? defaultScore : parsed;
     };
-    
+
     const getScore = (keys: string[]) => {
       for (const key of keys) {
-        if (data[key]?.score !== undefined) {
-          return extractScoreValue(data[key].score);
+        const dataPoint = data[key];
+        // Check if this data point has a score
+        if (dataPoint && dataPoint.score !== undefined && dataPoint.score !== null) {
+          const extracted = extractScoreValue(dataPoint.score);
+          console.log(`[Scores] Found score for key "${key}":`, extracted);
+          return extracted;
         }
       }
+      // Only return defaultScore if no keys matched - DON'T use this as final fallback
+      console.log(`[Scores] No score found for keys:`, keys, "- returning default");
       return defaultScore;
     };
-    
+
     const scores = {
       tradingCapacity: getScore(['turnover', 'projects', 'tradingCapacity']),
       reliability: getScore(['reliability']),
@@ -488,8 +499,8 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       culture: getScore(['culture']),
     };
 
-    // Debug logging
-    console.log('[Scores] Input data:', JSON.stringify(data));
+    // Debug logging - VERY important to see what's happening
+    console.log('[Scores] Raw input data:', JSON.stringify(data, null, 2));
     console.log('[Scores] Calculated scores:', JSON.stringify(scores));
 
     const values = Object.values(scores);

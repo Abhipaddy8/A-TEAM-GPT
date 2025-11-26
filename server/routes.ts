@@ -360,7 +360,7 @@ Here we go! Let's run your fast 7-question Trades Pipeline Diagnostic.
 
 Do NOT add anything else. Do NOT ask multiple questions. Just this.
 
-Include at the very end: <!--DIAGNOSTIC_DATA:{"questionsAsked": 1, "currentArea": "${currentQ.area}", "extractedScore": 5, "collectedData": {}}-->`;
+Include at the very end: <!--DIAGNOSTIC_DATA:{"questionsAsked": 1, "currentArea": "${currentQ.area}", "collectedData": {}}-->`;
         } else {
           systemPrompt = `You are Greg from Develop Coaching conducting a diagnostic. You just received an answer to Question ${questionsAsked}.
 
@@ -368,23 +368,31 @@ THEIR ANSWER: The user's message contains their answer. Interpret it intelligent
 
 YOUR TASK:
 1. Acknowledge their answer briefly (1 short sentence that shows you understood - be specific to what they said)
-2. Then ask the next question
+2. Score their answer from 1-10
+3. Then ask the next question
+
+SCORING GUIDELINES FOR QUESTION ${questionsAsked}:
+- Score 1-3: Poor/struggling situation
+- Score 4-6: Average/some issues
+- Score 7-10: Good/healthy situation
 
 YOUR RESPONSE FORMAT:
 [Brief acknowledgment of their answer]
 
 **Question ${questionNumber} of 7:** ${currentQ.question}
 
-SCORING THEIR PREVIOUS ANSWER (Question ${questionsAsked}):
-- Score 1-3: Poor/struggling situation
-- Score 4-6: Average/some issues
-- Score 7-10: Good/healthy situation
-
 Be conversational. Use UK English. Keep it SHORT.
 
-CRITICAL: For the JSON marker, extractedScore MUST be a single number 1-10, NOT an array. Same for the score inside collectedData.
-Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": 5, "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": 5, "answer": "[brief summary of their answer]"}}}-->
-Replace 5 with your actual score 1-10 based on their answer.`;
+CRITICAL: For the JSON marker:
+- Extract a REAL score 1-10 based on their answer (NOT always 5)
+- extractedScore MUST be a single number 1-10, NOT an array
+- Same for the score inside collectedData
+- Example: if they said their turnover is £500K and doing well, score it 7-8
+- If they said high stress with low turnover, score it 3-4
+
+Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": [YOUR_SCORE_1_TO_10], "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": [YOUR_SCORE_1_TO_10], "answer": "[brief summary of their answer]"}}}-->
+
+Use the scoring guidelines above to determine YOUR_SCORE_1_TO_10 based on their actual answer.`;
         }
       } else if (isDiagnosticMode && questionsAsked >= 7) {
         systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.
