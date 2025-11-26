@@ -6,7 +6,7 @@ interface CalendarPopupProps {
   calendarUrl?: string;
 }
 
-export default function CalendarPopup({ isOpen, onClose, calendarUrl = "https://link.flow-build.com/widget/booking/24mGEjljgZZ7yIkaXbaK" }: CalendarPopupProps) {
+export default function CalendarPopup({ isOpen, onClose, calendarUrl = "https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck" }: CalendarPopupProps) {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   return (

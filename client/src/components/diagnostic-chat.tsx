@@ -222,7 +222,7 @@ function CalendarEmbed() {
       </div>
       <div className="h-[500px]">
         <iframe
-          src="https://link.flow-build.com/widget/bookings/thefreedomroadmap"
+          src="https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck"
           className="w-full h-full border-0"
           title="Book a Scale Session"
         />

@@ -195,8 +195,8 @@ export default function Home() {
             <p className="text-gray-600 text-lg">Discover how to fix your labour pipeline and scale your business</p>
           </div>
           <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
-            <iframe 
-              src="https://link.flow-build.com/widget/bookings/thefreedomroadmap"
+            <iframe
+              src="https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck"
               className="w-full h-[700px] border-0"
               title="Book a Strategy Session"
               data-testid="calendar-embed"
