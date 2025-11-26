@@ -131,10 +131,20 @@ Preferred communication style: Simple, everyday language.
 - Full ChatGPT-style conversational interface - NO multiple choice options
 - GPT-4o-mini powers both diagnostic questions and free-form conversation
 - AI asks 7 diagnostic questions naturally based on conversation flow
-- AI interprets free-text responses and extracts scores conversationally
-- Backend tracks diagnostic state: `questionsAsked`, `collectedData`, `isActive`
-- Hidden JSON markers in AI responses track progress: `<!--DIAGNOSTIC_DATA:...-->`
+- AI interprets free-text responses and assigns scores 1-10 per area
+- Backend parses AI markers: `[DIAGNOSTIC_SCORE: X]`, `[DIAGNOSTIC_AREA: X]`, `[DIAGNOSTIC_ANSWER: X]`
+- Frontend uses `accumulatedDataRef` (React ref) to accumulate data across async mutation callbacks
+- This ref-based pattern solves React closure stale state issues in mutation callbacks
 - Conversation continues intelligently post-lead capture
+
+**Diagnostic Data Flow**
+1. User types answer → `handleSend()` reads `accumulatedDataRef.current` into payload
+2. Backend sends to GPT-4o-mini with scoring guidelines (1-3 poor, 4-6 average, 7-10 good)
+3. AI response includes hidden markers with score, area, and answer summary
+4. Backend parses markers → returns `diagnosticUpdate.collectedData` with NEW data only
+5. Frontend `onSuccess` merges new data into `accumulatedDataRef.current`
+6. After 7 questions, `calculateScoresFromData(accumulatedDataRef.current)` generates scores
+7. ScoreWidget displays traffic light visualization of all section scores
 
 **Diagnostic Areas Covered**
 1. Trading Capacity - Project volume and workload management
