@@ -489,16 +489,15 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     setMessages(prev => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
 
-    const lowerMessage = userMessage.toLowerCase();
-    const wantsDiagnostic = lowerMessage.includes("diagnostic") || 
+    const lowerMessage = userMessage.toLowerCase().trim();
+    const starterPhrases = ["ok", "okay", "yes", "yep", "yeah", "sure", "go", "start", "let's go", "let's do it", "ready", "begin", "run it", "do it"];
+    const wantsDiagnostic = starterPhrases.some(phrase => lowerMessage === phrase || lowerMessage.startsWith(phrase + " ")) ||
+                           lowerMessage.includes("diagnostic") || 
                            lowerMessage.includes("score") || 
                            lowerMessage.includes("assessment") ||
                            lowerMessage.includes("check") ||
-                           lowerMessage.includes("test") ||
-                           lowerMessage.includes("gaps") ||
-                           lowerMessage.includes("yes") ||
-                           lowerMessage.includes("let's do it") ||
-                           lowerMessage.includes("start");
+                           lowerMessage.includes("test my") ||
+                           lowerMessage.includes("gaps");
 
     if (!diagnosticState.isActive && wantsDiagnostic) {
       setDiagnosticState(prev => ({ ...prev, isActive: true }));

@@ -337,37 +337,53 @@ Your bonus pack reveals the exact system successful builders use.
       
       if (isDiagnosticMode && questionsAsked < 7) {
         const questionNumber = questionsAsked + 1;
-        const questionIntro = questionsAsked === 0 
-          ? "Here we go! Let's run your fast 7-question Trades Pipeline Diagnostic.\n\n**Question 1 of 7:**"
-          : `**Question ${questionNumber} of 7:**`;
         
-        systemPrompt = `You are Greg from Develop Coaching conducting the A-Team Trades Pipeline diagnostic.
+        const questionMap: Record<number, { area: string; question: string }> = {
+          1: { area: "turnover", question: "What's your annual turnover? (GBP £ is fine)" },
+          2: { area: "projects", question: "How many projects do you normally run at the same time?" },
+          3: { area: "reliability", question: "How reliable are your subbies? Do they show up on time and finish work properly?" },
+          4: { area: "recruitment", question: "How easy is it for you to find skilled tradespeople when you need them?" },
+          5: { area: "systems", question: "What systems do you use to manage scheduling and projects?" },
+          6: { area: "timeSpent", question: "How many hours per week do you spend dealing with labour issues?" },
+          7: { area: "culture", question: "How's the morale and culture in your team?" },
+        };
+        
+        const currentQ = questionMap[questionNumber];
+        
+        if (questionsAsked === 0) {
+          systemPrompt = `You are Greg from Develop Coaching. The user wants to start the diagnostic.
 
-THE 7 QUESTIONS (ask them in order):
-1. What's your annual turnover? (GBP £ accepted)
-2. How many projects do you normally run at the same time?
-3. How reliable are your subbies? Do they show up on time and finish work properly?
-4. How easy is it for you to find skilled tradespeople when you need them?
-5. What systems do you use to manage scheduling and projects?
-6. How many hours per week do you spend dealing with labour issues?
-7. How's the morale and culture in your team?
+YOUR EXACT RESPONSE (copy this exactly):
+Here we go! Let's run your fast 7-question Trades Pipeline Diagnostic.
 
-CURRENT STATE:
-- Question number: ${questionNumber}
-- Questions asked so far: ${questionsAsked}
+**Question 1 of 7:** ${currentQ.question}
+
+Do NOT add anything else. Do NOT ask multiple questions. Just this.
+
+Include at the very end: <!--DIAGNOSTIC_DATA:{"questionsAsked": 1, "currentArea": "${currentQ.area}", "extractedScore": 5, "collectedData": {}}-->`;
+        } else {
+          systemPrompt = `You are Greg from Develop Coaching conducting a diagnostic. You just received an answer to Question ${questionsAsked}.
+
+THEIR ANSWER: The user's message contains their answer. Interpret it intelligently - they might give short or long answers.
+
+YOUR TASK:
+1. Acknowledge their answer briefly (1 short sentence that shows you understood - be specific to what they said)
+2. Then ask the next question
 
 YOUR RESPONSE FORMAT:
-${questionIntro} [Ask question ${questionNumber} from the list above]
+[Brief acknowledgment of their answer]
 
-If this is NOT question 1, first briefly acknowledge their previous answer (1 short sentence), then ask the next question.
+**Question ${questionNumber} of 7:** ${currentQ.question}
 
-RULES:
-- Ask exactly ONE question at a time
-- Use the exact question format: "Question X of 7:"
-- Keep it short and direct
-- Use UK English
+SCORING THEIR PREVIOUS ANSWER (Question ${questionsAsked}):
+- Score 1-3: Poor/struggling situation
+- Score 4-6: Average/some issues
+- Score 7-10: Good/healthy situation
 
-IMPORTANT: Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "area${questionNumber}", "extractedScore": 5, "collectedData": {}}-->`;
+Be conversational. Use UK English. Keep it SHORT.
+
+Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": [your score 1-10], "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": [score], "answer": "[brief summary of their answer]"}}}-->`;
+        }
       } else if (isDiagnosticMode && questionsAsked >= 7) {
         systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.
 
