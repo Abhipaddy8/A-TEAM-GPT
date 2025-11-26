@@ -773,7 +773,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                 data-testid={`message-${message.role}-${index}`}
               >
                 {message.role === "assistant" && !message.widget && (
-                  <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-200">
+                  <div className="flex items-center gap-2 pb-3 border-b border-gray-200">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-vivid-blue to-brand-sky-blue flex items-center justify-center">
                       <Sparkles className="h-4 w-4 text-white" />
                     </div>
