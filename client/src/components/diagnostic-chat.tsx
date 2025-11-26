@@ -461,16 +461,15 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     const extractScoreValue = (scoreData: any): number => {
       if (scoreData === undefined || scoreData === null) return defaultScore;
       if (typeof scoreData === 'number') {
-        const num = parseInt(scoreData, 10);
-        return isNaN(num) ? defaultScore : num;
+        return isNaN(scoreData) ? defaultScore : Math.round(scoreData);
       }
       if (Array.isArray(scoreData)) {
         // AI sometimes returns score as [7] or similar
         const firstNum = scoreData.find((v: any) => typeof v === 'number');
-        return firstNum !== undefined ? parseInt(firstNum, 10) : defaultScore;
+        return firstNum !== undefined ? Math.round(firstNum) : defaultScore;
       }
       // Try to parse as number if it's a string
-      const parsed = parseInt(scoreData, 10);
+      const parsed = parseInt(String(scoreData), 10);
       return isNaN(parsed) ? defaultScore : parsed;
     };
 
