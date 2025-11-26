@@ -14,7 +14,7 @@ import ScoreWidget from "./score-widget";
 interface Message {
   role: "assistant" | "user";
   content: string;
-  widget?: "score-display" | "email-form" | "phone-form" | "calendar" | "skip-options";
+  widget?: "score-display" | "email-form" | "phone-form" | "calendar" | "skip-options" | "booking-choice";
   data?: any;
 }
 
@@ -701,9 +701,22 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   };
 
   const handleBookScaleSession = () => {
+    // Don't show calendar immediately - ask what they want to do first
     setMessages(prev => [
       ...prev,
       { role: "user", content: "Book Scale Session" },
+      {
+        role: "assistant",
+        content: "Perfect! Before we jump into the calendar, what would you like to do?",
+        widget: "booking-choice",
+      },
+    ]);
+  };
+
+  const handleConfirmBooking = () => {
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: "Show me the calendar" },
       {
         role: "assistant",
         content: "Great choice! Pick a time below that works for you. I'll personally walk you through how to implement the fixes in your report.",
@@ -770,76 +783,101 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                 
                 {!message.widget && (
                   <p className={`text-base leading-relaxed whitespace-pre-line ${message.role === "user" ? "text-white" : "text-gray-800"}`}>
-                    {message.content}
+                    {message.role === "assistant"
+                      ? message.content
+                          .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove **bold**
+                          .replace(/\*([^*]+)\*/g, '$1')      // Remove *italics*
+                          .replace(/`([^`]+)`/g, '$1')         // Remove `code`
+                          .replace(/```[\s\S]*?```/g, '')      // Remove code blocks
+                      : message.content
+                    }
                   </p>
                 )}
 
                 {message.widget === "score-display" && message.data && (
-                  <div className="mt-4">
-                    <ScoreWidget data={message.data} />
-                  </div>
+                  !emailSubmitted ? (
+                    <div className="mt-4">
+                      <ScoreWidget data={message.data} />
+                    </div>
+                  ) : (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <p className="text-sm text-gray-500 italic">✓ Diagnostic scores submitted</p>
+                    </div>
+                  )
                 )}
 
                 {message.widget === "email-form" && (
-                  <form onSubmit={handleEmailSubmit} className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
-                    <div className="text-center mb-4">
-                      <p className="text-brand-dark-navy font-bold text-lg">Want Deeper Insights?</p>
-                      <p className="text-gray-600 text-sm">Click to get your detailed email report</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="firstName" className="text-brand-charcoal font-semibold text-sm">First Name</Label>
-                        <Input id="firstName" name="firstName" type="text" required placeholder="John" className="mt-2 border-2" data-testid="input-firstName" />
+                  !emailSubmitted ? (
+                    <form onSubmit={handleEmailSubmit} className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
+                      <div className="text-center mb-4">
+                        <p className="text-brand-dark-navy font-bold text-lg">Want Deeper Insights?</p>
+                        <p className="text-gray-600 text-sm">Click to get your detailed email report</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName" className="text-brand-charcoal font-semibold text-sm">First Name</Label>
+                          <Input id="firstName" name="firstName" type="text" required placeholder="John" className="mt-2 border-2" data-testid="input-firstName" />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName" className="text-brand-charcoal font-semibold text-sm">Last Name</Label>
+                          <Input id="lastName" name="lastName" type="text" required placeholder="Smith" className="mt-2 border-2" data-testid="input-lastName" />
+                        </div>
                       </div>
                       <div>
-                        <Label htmlFor="lastName" className="text-brand-charcoal font-semibold text-sm">Last Name</Label>
-                        <Input id="lastName" name="lastName" type="text" required placeholder="Smith" className="mt-2 border-2" data-testid="input-lastName" />
+                        <Label htmlFor="email" className="text-brand-charcoal font-semibold text-sm">Email Address</Label>
+                        <Input id="email" name="email" type="email" required placeholder="john@example.com" className="mt-2 border-2" data-testid="input-email" />
                       </div>
+                      <Button type="submit" className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold py-6" disabled={submitEmailMutation.isPending} data-testid="button-submit-email">
+                        {submitEmailMutation.isPending ? (
+                          <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending Report...</>
+                        ) : (
+                          <><Sparkles className="h-5 w-5 mr-2" />Send Me Deeper Insights</>
+                        )}
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <p className="text-sm text-gray-500 italic">✓ Email report sent</p>
                     </div>
-                    <div>
-                      <Label htmlFor="email" className="text-brand-charcoal font-semibold text-sm">Email Address</Label>
-                      <Input id="email" name="email" type="email" required placeholder="john@example.com" className="mt-2 border-2" data-testid="input-email" />
-                    </div>
-                    <Button type="submit" className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold py-6" disabled={submitEmailMutation.isPending} data-testid="button-submit-email">
-                      {submitEmailMutation.isPending ? (
-                        <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending Report...</>
-                      ) : (
-                        <><Sparkles className="h-5 w-5 mr-2" />Send Me Deeper Insights</>
-                      )}
-                    </Button>
-                  </form>
+                  )
                 )}
 
                 {message.widget === "phone-form" && (
-                  <div className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-sky-blue/20">
-                    <div className="text-center mb-4">
-                      <p className="text-brand-dark-navy font-bold text-lg">Get Training Access</p>
-                      <p className="text-gray-600 text-sm">We'll text you the link to our exclusive training</p>
-                    </div>
-                    <form onSubmit={handlePhoneSubmit} className="space-y-4">
-                      <div>
-                        <Label className="text-brand-charcoal font-semibold text-sm">Mobile Number</Label>
-                        <div className="flex gap-2 mt-2">
-                          <select name="countryCode" defaultValue="44" className="w-24 px-3 py-2 border-2 rounded-lg font-semibold text-sm" data-testid="select-country-code">
-                            <option value="44">+44</option>
-                            <option value="1">+1</option>
-                            <option value="353">+353</option>
-                          </select>
-                          <Input id="phone" name="phone" type="tel" placeholder="7700 900000" className="flex-1 border-2" data-testid="input-phone" />
+                  !phoneSubmitted ? (
+                    <div className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-sky-blue/20">
+                      <div className="text-center mb-4">
+                        <p className="text-brand-dark-navy font-bold text-lg">Get Training Access</p>
+                        <p className="text-gray-600 text-sm">We'll text you the link to our exclusive training</p>
+                      </div>
+                      <form onSubmit={handlePhoneSubmit} className="space-y-4">
+                        <div>
+                          <Label className="text-brand-charcoal font-semibold text-sm">Mobile Number</Label>
+                          <div className="flex gap-2 mt-2">
+                            <select name="countryCode" defaultValue="44" className="w-24 px-3 py-2 border-2 rounded-lg font-semibold text-sm" data-testid="select-country-code">
+                              <option value="44">+44</option>
+                              <option value="1">+1</option>
+                              <option value="353">+353</option>
+                            </select>
+                            <Input id="phone" name="phone" type="tel" placeholder="7700 900000" className="flex-1 border-2" data-testid="input-phone" />
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex gap-3">
-                        <Button type="submit" className="flex-1 bg-gradient-to-r from-brand-sky-blue to-brand-vivid-blue text-white font-semibold py-5" disabled={submitPhoneMutation.isPending} data-testid="button-submit-phone">
-                          {submitPhoneMutation.isPending ? (
-                            <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending...</>
-                          ) : (
-                            <><Zap className="h-5 w-5 mr-2" />Send Training Link</>
-                          )}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={handleSkipPhone} className="px-6 border-2" data-testid="button-skip-phone">Skip</Button>
-                      </div>
-                    </form>
-                  </div>
+                        <div className="flex gap-3">
+                          <Button type="submit" className="flex-1 bg-gradient-to-r from-brand-sky-blue to-brand-vivid-blue text-white font-semibold py-5" disabled={submitPhoneMutation.isPending} data-testid="button-submit-phone">
+                            {submitPhoneMutation.isPending ? (
+                              <><Loader2 className="h-5 w-5 mr-2 animate-spin" />Sending...</>
+                            ) : (
+                              <><Zap className="h-5 w-5 mr-2" />Send Training Link</>
+                            )}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={handleSkipPhone} className="px-6 border-2" data-testid="button-skip-phone">Skip</Button>
+                        </div>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 text-center">
+                      <p className="text-sm text-gray-500 italic">✓ Training link sent via SMS</p>
+                    </div>
+                  )
                 )}
 
                 {message.widget === "skip-options" && (
@@ -848,22 +886,50 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
                       <p className="text-brand-dark-navy font-bold text-lg">What would you like to do next?</p>
                     </div>
                     <div className="flex flex-col gap-3">
-                      <Button 
-                        onClick={handleBookScaleSession} 
+                      <Button
+                        onClick={handleBookScaleSession}
                         className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold py-6"
                         data-testid="button-book-scale-session"
                       >
                         <Target className="h-5 w-5 mr-2" />
                         Book Scale Session
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={handleContinueChatting}
                         className="w-full border-2 py-6"
                         data-testid="button-continue-chatting"
                       >
                         <Sparkles className="h-5 w-5 mr-2" />
                         Continue Chatting
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {message.widget === "booking-choice" && (
+                  <div className="space-y-4 bg-white p-6 rounded-xl border-2 border-brand-vivid-blue/10">
+                    <div className="text-center mb-4">
+                      <p className="text-brand-dark-navy font-bold text-lg">Ready to book or want to chat first?</p>
+                      <p className="text-gray-600 text-sm mt-2">Choose what works best for you</p>
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <Button
+                        onClick={handleConfirmBooking}
+                        className="w-full bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold py-6"
+                        data-testid="button-confirm-booking"
+                      >
+                        <Target className="h-5 w-5 mr-2" />
+                        Yes, Show Me the Calendar
+                      </Button>
+                      <Button
+                        variant="outline"
+                        onClick={handleContinueChatting}
+                        className="w-full border-2 py-6"
+                        data-testid="button-chat-first"
+                      >
+                        <Sparkles className="h-5 w-5 mr-2" />
+                        I'd Like to Chat First
                       </Button>
                     </div>
                   </div>
