@@ -109,61 +109,85 @@ export default function Home() {
         )}
       </main>
 
-      {/* Testimonials Section Below Chat */}
+      {/* Google Reviews Section */}
       <section className="relative z-10 bg-gray-50 py-16 mt-8">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-4">What Builders Are Saying</h2>
-            <p className="text-gray-600 text-lg">Join 500+ UK builders who've transformed their labour pipeline</p>
+        <div className="container mx-auto px-4 max-w-7xl">
+          <div className="text-center mb-10">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <svg className="w-8 h-8" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <span className="text-xl font-semibold text-gray-700">Google Reviews</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-2">What Builders Are Saying</h2>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Mark Cooper",
-                title: "Managing Director, Cooper Construction Ltd",
-                text: "The A-Team diagnostic showed me I was losing £60K a year through poor scheduling and unreliable subcontractors. We fixed it in 60 days. Absolute game-changer for my business.",
-                rating: 5
-              },
-              {
-                name: "Sarah Mitchell",
-                title: "Owner, Mitchell & Sons Building",
-                text: "Couldn't believe how quickly we identified our labour pipeline problems. The recommendations were spot-on and easy to implement. Already seeing results after 30 days.",
-                rating: 5
-              },
-              {
-                name: "James Patterson",
-                title: "Director, Patterson Homes",
-                text: "Fantastic diagnostic tool. Really thorough and the insights into our culture and systems were eye-opening. Worth every penny of the free assessment!",
-                rating: 5
-              }
-            ].map((testimonial, i) => (
-              <Card key={i} className="p-8 bg-white border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
-                {/* Stars */}
-                <div className="flex gap-1 mb-4">
-                  {[...Array(testimonial.rating)].map((_, j) => (
-                    <svg key={j} className="w-5 h-5 text-amber-500 fill-current" viewBox="0 0 24 24">
-                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                    </svg>
-                  ))}
-                </div>
+          {/* Horizontal Scrollable Reviews */}
+          <div className="overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            <div className="flex gap-6" style={{ minWidth: "max-content" }}>
+              {[
+                { name: "Tim Day", info: "3 reviews", initial: "T", color: "bg-orange-500", text: "If you follow the Mastermind programme you can't go wrong. If you want to get off the tools and take your business to 'the next level' act now. Highly recommended." },
+                { name: "Andrews Group Ltd", info: "9 reviews", initial: "A", color: "bg-teal-500", text: "We've been working with Greg and his team for about 10 weeks now. The changes we've made are unbelievable...we have had a complete shift in mindset, new branding, all new systems in place. Today we've attended the build and scale summit and it's definitely delivered. We've networked with so many inspiring people and left with a huge list of action points that we know we can achieve." },
+                { name: "Alexandra Powell", info: "Local Guide · 20 reviews", initial: "A", color: "bg-purple-500", text: "We've recently started working with Greg Wilkes and his team, and their support has already been fantastic. Greg is approachable, attentive, and has provided valuable insights that align perfectly with our construction business goals. His DEVELOP framework is helping us streamline our processes, build clarity, and focus as we refine our operations. We're excited to continue working together and see how their guidance will shape our growth moving forward." },
+                { name: "Sean Ryan", info: "5 reviews", initial: "S", color: "bg-green-600", text: "Highly recommended been on mastermind for a few years now and I can see the improvement in my company already." },
+                { name: "Nick Cahill", info: "3 reviews", initial: "N", color: "bg-blue-500", text: "First timer! Loved it. Felt inspired and I leave feeling positive and am very excited about the future. Thanks to Greg, Will Polsten and the other speakers." },
+                { name: "Mike Calvert", info: "3 reviews", initial: "M", color: "bg-red-500", text: "Really good day, lots of information and value to take away. Guest speakers were amazing. Good to be around the community" },
+                { name: "Krzysztof Poplawski", info: "4 reviews", initial: "K", color: "bg-amber-600", text: "Amazing event, great and inspiring speakers! Worth to joint for anyone who wants to grow their business!" },
+                { name: "Paul Murphy", info: "1 review", initial: "P", color: "bg-pink-500", text: "today's work shop was massively inspiring and i can't wait to get started on implementing what we have learnt into our business and optimistic about where it could take us!" },
+                { name: "Jordan Stubley", info: "4 reviews", initial: "J", color: "bg-indigo-500", text: "Really great to be working with Greg the live event has been really insightful" }
+              ].map((review, i) => (
+                <Card key={i} className="w-[340px] flex-shrink-0 p-5 bg-white border border-gray-200 hover:shadow-lg transition-all duration-300" data-testid={`review-card-${i}`}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className={`w-10 h-10 rounded-full ${review.color} flex items-center justify-center text-white font-semibold text-lg flex-shrink-0`}>
+                      {review.initial}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-blue-600 text-sm">{review.name}</p>
+                      <p className="text-xs text-gray-500">{review.info}</p>
+                    </div>
+                    <Badge className="ml-auto bg-blue-100 text-blue-700 text-xs border-0 flex-shrink-0">NEW</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="flex">
+                      {[...Array(5)].map((_, j) => (
+                        <svg key={j} className="w-4 h-4 text-amber-400 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">a few days ago</span>
+                  </div>
+                  <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">{review.text}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-                {/* Review Text */}
-                <p className="text-gray-800 mb-6 italic leading-relaxed">"{testimonial.text}"</p>
-
-                {/* Author */}
-                <div className="border-t-2 border-gray-100 pt-4">
-                  <p className="font-bold text-brand-dark-navy">{testimonial.name}</p>
-                  <p className="text-sm text-gray-600">{testimonial.title}</p>
-                </div>
-              </Card>
-            ))}
+      {/* Calendar Booking Section */}
+      <section className="relative z-10 py-16 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-3">Book Your Free Strategy Session</h2>
+            <p className="text-gray-600 text-lg">Discover how to fix your labour pipeline and scale your business</p>
+          </div>
+          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
+            <iframe 
+              src="https://link.flow-build.com/widget/bookings/thefreedomroadmap"
+              className="w-full h-[700px] border-0"
+              title="Book a Strategy Session"
+              data-testid="calendar-embed"
+            />
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t-2 border-gray-200 bg-white mt-32">
+      <footer className="relative z-10 border-t-2 border-gray-200 bg-white">
         <div className="container mx-auto px-4 py-12 max-w-7xl">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-sm text-gray-600 text-center md:text-left">

@@ -235,7 +235,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hey there! I'm Greg from Develop Coaching.\n\nI help UK builders fix their labour pipeline - you know, the headaches with unreliable subbies, recruitment struggles, and the constant firefighting that's probably costing you £20K-£90K a year.\n\nWhat's going on with your team at the moment? Or if you want, I can run a quick 3-minute diagnostic to identify exactly where your gaps are.",
+      content: "Hey there! I'm Greg from Develop Coaching.\n\nI help UK builders fix their labour pipeline - you know, the headaches with unreliable subbies, recruitment struggles, and the constant firefighting that's probably costing you £20K-£90K a year.\n\nLet's run a quick 3-minute diagnostic to identify exactly where your gaps are. Just type 'start' or tell me a bit about your business to begin!",
     },
   ]);
   const [input, setInput] = useState("");
