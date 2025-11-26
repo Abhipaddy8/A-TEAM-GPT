@@ -19,6 +19,36 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: false }));
 
+// CORS configuration for WordPress iframe embedding
+app.use((req, res, next) => {
+  const allowedDomains = process.env.ALLOWED_IFRAME_DOMAINS?.split(',').map(d => d.trim()) || [];
+  const origin = req.headers.origin;
+
+  // Allow specified WordPress domains (and localhost for development)
+  if (origin && (allowedDomains.includes(origin) || origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  // Critical: Allow iframe embedding from WordPress
+  res.removeHeader('X-Frame-Options');
+
+  // CSP frame-ancestors directive (modern approach)
+  const cspDomains = allowedDomains.length > 0 ? allowedDomains.join(' ') : "'none'";
+  res.setHeader('Content-Security-Policy', `frame-ancestors 'self' ${cspDomains}`);
+
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

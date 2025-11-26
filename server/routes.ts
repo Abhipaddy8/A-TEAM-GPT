@@ -540,6 +540,57 @@ Keep responses concise (2-4 sentences). Be conversational, not formal.`;
     }
   });
 
+  // POST /api/track-booking - Track calendar booking with UTM parameters
+  app.post("/api/track-booking", async (req, res) => {
+    try {
+      const bodySchema = z.object({
+        event: z.string(),
+        utmSource: z.string().optional(),
+        utmMedium: z.string().optional(),
+        utmCampaign: z.string().optional(),
+        timestamp: z.string().optional(),
+      });
+
+      const validationResult = bodySchema.safeParse(req.body);
+      if (!validationResult.success) {
+        return res.status(400).json({
+          error: "Invalid request data",
+          details: validationResult.error.format(),
+        });
+      }
+
+      const { event, utmSource, utmMedium, utmCampaign, timestamp } = validationResult.data;
+
+      console.log("[API] Tracking booking event:", {
+        event,
+        utmSource,
+        utmMedium,
+        utmCampaign,
+        timestamp,
+      });
+
+      // Log booking event for analytics (could be extended to store in database)
+      console.log("[API] 📅 Booking tracked:", {
+        event,
+        utm_source: utmSource,
+        utm_medium: utmMedium,
+        utm_campaign: utmCampaign,
+        timestamp,
+      });
+
+      res.json({
+        success: true,
+        message: "Booking tracked successfully",
+      });
+    } catch (error) {
+      console.error("[API] Error tracking booking:", error);
+      res.status(500).json({
+        error: "Failed to track booking",
+        message: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

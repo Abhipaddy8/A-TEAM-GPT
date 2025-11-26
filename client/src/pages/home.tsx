@@ -3,13 +3,50 @@ import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import DiagnosticChat from "@/components/diagnostic-chat";
 import CalendarPopup from "@/components/calendar-popup";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import videoThumbnail from "@assets/Gemini_Generated_Image_yiac8xyiac8xyiac_1764129756943.png";
 import introVideo from "@assets/Video landing page_1764129756948.mp4";
 
 export default function Home() {
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
+
+  // Capture UTM parameters on page load
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const params: any = {};
+
+    // Check for existing stored UTMs
+    const storedUtm = sessionStorage.getItem('utm_params');
+    if (storedUtm) {
+      try {
+        Object.assign(params, JSON.parse(storedUtm));
+      } catch (e) {
+        console.error('[UTM] Failed to parse stored params:', e);
+      }
+    }
+
+    // Extract from URL (takes priority)
+    if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
+    if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
+    if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
+
+    // Store if we have params
+    if (Object.keys(params).length > 0) {
+      sessionStorage.setItem('utm_params', JSON.stringify(params));
+      console.log('[UTM] Captured on home page:', params);
+
+      // Clean URL (remove UTM params for cleaner appearance)
+      if (searchParams.has('utm_source') || searchParams.has('utm_medium') || searchParams.has('utm_campaign')) {
+        searchParams.delete('utm_source');
+        searchParams.delete('utm_medium');
+        searchParams.delete('utm_campaign');
+        const newUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+        console.log('[UTM] Cleaned URL');
+      }
+    }
+  }, []);
 
   // Handle scroll ONLY when opening the calendar (not on every interaction)
   const handleBookingClick = () => {
