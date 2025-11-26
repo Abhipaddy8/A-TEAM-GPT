@@ -79,6 +79,11 @@ async function testDiagnosticFlow() {
         content: userMessage
       });
 
+      // Update diagnostic state when starting
+      if (i === 0 && userMessage.toLowerCase() === 'start') {
+        diagnosticState.isActive = true;
+      }
+
       const response = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

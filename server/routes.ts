@@ -362,37 +362,43 @@ Do NOT add anything else. Do NOT ask multiple questions. Just this.
 
 Include at the very end: <!--DIAGNOSTIC_DATA:{"questionsAsked": 1, "currentArea": "${currentQ.area}", "collectedData": {}}-->`;
         } else {
-          systemPrompt = `You are Greg from Develop Coaching conducting a diagnostic. You just received an answer to Question ${questionsAsked}.
+          const prevQuestion = questionMap[questionsAsked];
+          systemPrompt = `You are Greg from Develop Coaching conducting a diagnostic. The user just answered Question ${questionsAsked}: "${prevQuestion?.question}"
 
-THEIR ANSWER: The user's message contains their answer. Interpret it intelligently - they might give short or long answers.
+THEIR EXACT ANSWER: ${message}
 
 YOUR TASK:
-1. Acknowledge their answer briefly (1 short sentence that shows you understood - be specific to what they said)
-2. Score their answer from 1-10
-3. Then ask the next question
+1. Acknowledge their answer briefly (1 short sentence that shows you understood - be specific)
+2. Score their answer from 1-10 based on the guidelines below
+3. Ask Question ${questionNumber} of 7
 
-SCORING GUIDELINES FOR QUESTION ${questionsAsked}:
-- Score 1-3: Poor/struggling situation
-- Score 4-6: Average/some issues
-- Score 7-10: Good/healthy situation
+SCORING GUIDELINES FOR THEIR ANSWER TO QUESTION ${questionsAsked}:
+- Score 1-3: Poor/struggling situation (major issues, lots of challenges)
+- Score 4-6: Average/some issues (mixed challenges, some good, some bad)
+- Score 7-10: Good/healthy situation (strong area, few issues)
 
-YOUR RESPONSE FORMAT:
-[Brief acknowledgment of their answer]
+QUESTION AREA: ${prevQuestion?.area}
+- If turnover/projects: Low = 1-3, Medium = 4-6, High/Good = 7-10
+- If reliability: Unreliable = 1-3, Sometimes = 4-6, Very reliable = 7-10
+- If recruitment: Difficult = 1-3, Moderate = 4-6, Easy = 7-10
+- If systems: None = 1-3, Basic = 4-6, Organized = 7-10
+- If time spent: 15+ hours = 1-3, 5-15 hours = 4-6, <5 hours = 7-10
+- If culture: Low morale = 1-3, Mixed = 4-6, Great = 7-10
+
+YOUR RESPONSE MUST BE:
+[1-2 sentence acknowledgment of their answer]
 
 **Question ${questionNumber} of 7:** ${currentQ.question}
 
-Be conversational. Use UK English. Keep it SHORT.
+[DIAGNOSTIC_SCORE: X] where X is a number 1-10
+[DIAGNOSTIC_AREA: ${prevQuestion?.area}]
+[DIAGNOSTIC_ANSWER: brief 1-line summary]
 
-CRITICAL: For the JSON marker:
-- Extract a REAL score 1-10 based on their answer (NOT always 5)
-- extractedScore MUST be a single number 1-10, NOT an array
-- Same for the score inside collectedData
-- Example: if they said their turnover is £500K and doing well, score it 7-8
-- If they said high stress with low turnover, score it 3-4
-
-Include at end: <!--DIAGNOSTIC_DATA:{"questionsAsked": ${questionNumber}, "currentArea": "${currentQ.area}", "extractedScore": [YOUR_SCORE_1_TO_10], "collectedData": {"${questionMap[questionsAsked]?.area || 'answer'}": {"score": [YOUR_SCORE_1_TO_10], "answer": "[brief summary of their answer]"}}}-->
-
-Use the scoring guidelines above to determine YOUR_SCORE_1_TO_10 based on their actual answer.`;
+IMPORTANT:
+- Always include [DIAGNOSTIC_SCORE: X] with an actual score 1-10 based on their answer
+- Always include [DIAGNOSTIC_AREA: ...] with the previous question's area
+- Always include [DIAGNOSTIC_ANSWER: ...] with their answer summary
+- This score MUST match their actual situation, NOT be a default like 5`;
         }
       } else if (isDiagnosticMode && questionsAsked >= 7) {
         systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.
@@ -456,18 +462,44 @@ Keep responses concise (2-4 sentences). Be conversational, not formal.`;
         });
       }
 
-      // Parse diagnostic data from response if present
+      // Parse diagnostic data from response using new format
       let diagnosticUpdate = null;
       let isComplete = false;
 
-      const diagnosticMatch = aiMessage.match(/<!--DIAGNOSTIC_DATA:(.*?)-->/);
-      if (diagnosticMatch) {
-        try {
-          diagnosticUpdate = JSON.parse(diagnosticMatch[1]);
-          aiMessage = aiMessage.replace(/<!--DIAGNOSTIC_DATA:.*?-->/g, '').trim();
-        } catch (e) {
-          console.error("[API] Failed to parse diagnostic data:", e);
+      console.log("[API] Looking for diagnostic markers in AI response...");
+
+      // Try new format first: [DIAGNOSTIC_SCORE: X]
+      const scoreMatch = aiMessage.match(/\[DIAGNOSTIC_SCORE:\s*(\d+)\]/);
+      const areaMatch = aiMessage.match(/\[DIAGNOSTIC_AREA:\s*(\w+)\]/);
+      const answerMatch = aiMessage.match(/\[DIAGNOSTIC_ANSWER:\s*([^\]]+)\]/);
+
+      if (scoreMatch || areaMatch || answerMatch) {
+        console.log("[API] ✅ Found new format diagnostic markers");
+        const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 5;
+        const area = areaMatch ? areaMatch[1] : null;
+
+        if (area) {
+          diagnosticUpdate = {
+            questionsAsked: (diagnosticState?.questionsAsked || 0) + 1,
+            collectedData: {
+              [area]: {
+                score: score,
+                answer: answerMatch ? answerMatch[1].trim() : "User's answer"
+              }
+            }
+          };
+          console.log("[API] ✅ Parsed diagnostic data:", diagnosticUpdate);
+
+          // Remove diagnostic markers from message
+          aiMessage = aiMessage
+            .replace(/\[DIAGNOSTIC_SCORE:[^\]]*\]/g, '')
+            .replace(/\[DIAGNOSTIC_AREA:[^\]]*\]/g, '')
+            .replace(/\[DIAGNOSTIC_ANSWER:[^\]]*\]/g, '')
+            .trim();
         }
+      } else {
+        console.log("[API] ⚠️  No diagnostic markers found in response");
+        console.log("[API] Full AI response:", aiMessage.substring(0, 300) + "...");
       }
 
       const completeMatch = aiMessage.match(/<!--DIAGNOSTIC_COMPLETE:true-->/);
