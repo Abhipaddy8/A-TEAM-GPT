@@ -293,11 +293,20 @@ Your bonus pack reveals the exact system successful builders use.
     }
   });
 
-  // POST /api/chat - AI-powered conversation for "Continue Chatting"
+  // POST /api/chat - AI-powered conversation for general chat and diagnostics
   app.post("/api/chat", async (req, res) => {
     try {
       const bodySchema = z.object({
         message: z.string().min(1),
+        conversationHistory: z.array(z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        })).optional(),
+        diagnosticState: z.object({
+          isActive: z.boolean(),
+          questionsAsked: z.number(),
+          collectedData: z.record(z.any()),
+        }).optional(),
       });
 
       const validationResult = bodySchema.safeParse(req.body);
@@ -309,43 +318,97 @@ Your bonus pack reveals the exact system successful builders use.
         });
       }
 
-      const { message } = validationResult.data;
+      const { message, conversationHistory = [], diagnosticState } = validationResult.data;
 
       console.log("[API] Processing chat message:", message.substring(0, 50) + "...");
+      console.log("[API] Diagnostic state:", diagnosticState);
 
-      // Call OpenAI for real conversation
-      const openaiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
+      // Build conversation history for context
+      const historyMessages = conversationHistory.slice(-10).map(msg => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+
+      // Determine system prompt based on diagnostic state
+      const isDiagnosticMode = diagnosticState?.isActive;
+      const questionsAsked = diagnosticState?.questionsAsked || 0;
+      
+      let systemPrompt: string;
+      
+      if (isDiagnosticMode && questionsAsked < 7) {
+        systemPrompt = `You are Greg from Develop Coaching, a UK construction business expert conducting a labour pipeline diagnostic. You're having a natural conversation to understand the builder's challenges.
+
+DIAGNOSTIC AREAS TO COVER (7 questions total):
+1. Trading Capacity - How many projects they run, workload management
+2. Reliability - Subbie punctuality, no-shows, work completion
+3. Recruitment - Difficulty finding skilled labour, pipeline strength
+4. Systems - Scheduling tools, project management, organization
+5. Time Spent - Hours wasted on labour issues weekly
+6. Biggest Challenge - Their main pain point with labour
+7. Culture - Team morale, turnover, engagement
+
+CURRENT STATE:
+- Questions asked so far: ${questionsAsked}
+- Data collected: ${JSON.stringify(diagnosticState?.collectedData || {})}
+
+YOUR TASK:
+1. Acknowledge their last response with empathy and insight (1-2 sentences showing you understand their situation)
+2. If they haven't answered clearly, gently probe for more specific information
+3. Then naturally transition to the next diagnostic area you haven't covered yet
+4. Ask ONE clear question about that area
+
+CONVERSATION STYLE:
+- Be warm, conversational, like a trusted advisor over coffee
+- Use UK English (labour, subbies, etc.)
+- Reference their specific situation when transitioning
+- Keep responses SHORT (3-4 sentences max before asking the next question)
+- NO bullet points or formal structure - flow naturally
+
+IMPORTANT: At the end of your response, include a hidden JSON block that I'll parse:
+<!--DIAGNOSTIC_DATA:{"questionsAsked": X, "currentArea": "areaName", "extractedScore": Y, "collectedData": {...}}-->
+
+Where extractedScore is your assessment of their answer (1-10 scale based on how healthy that area seems).`;
+      } else if (isDiagnosticMode && questionsAsked >= 7) {
+        systemPrompt = `You are Greg from Develop Coaching. The diagnostic is now COMPLETE.
+
+COLLECTED DATA: ${JSON.stringify(diagnosticState?.collectedData || {})}
+
+YOUR TASK:
+1. Thank them warmly for completing the diagnostic
+2. Give a brief, insightful summary of what you've learned about their situation (2-3 sentences)
+3. Tease the value of the full report they'll receive
+4. Encourage them to enter their email to get the detailed PDF report with personalised recommendations
+
+Keep it conversational and warm. Make them feel understood and excited about the insights coming their way.
+
+Include at the end: <!--DIAGNOSTIC_COMPLETE:true-->`;
+      } else {
+        systemPrompt = `You are Greg from Develop Coaching, an expert construction business consultant specializing in UK trades businesses. You help builders and tradespeople solve problems with their labour pipeline, team management, recruitment, scheduling, and profitability.
+
+You're having a natural conversation. Be warm, practical, and direct. Use UK English.
+
+If they seem interested in understanding their labour challenges, offer to run a quick 3-minute diagnostic that will identify their specific gaps and give them a personalized score.
+
+If they want to book a call, encourage them to use the calendar booking below.
+
+Keep responses concise (2-4 sentences). Be conversational, not formal.`;
+      }
+
+      const openaiResponse = await fetch(`${process.env.AI_INTEGRATIONS_OPENAI_BASE_URL}/chat/completions`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Authorization": `Bearer ${process.env.AI_INTEGRATIONS_OPENAI_API_KEY}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
           messages: [
-            {
-              role: "system",
-              content: `You are an expert construction business consultant specializing in UK trades businesses (plumbing, electrical, carpentry, etc.). You help builders and tradespeople solve problems with their labour pipeline, team management, recruitment, scheduling, and profitability.
-
-You provide practical, actionable advice based on real construction industry experience. Be conversational, friendly, and direct. Give specific recommendations when asked.
-
-Focus on:
-- Recruiting and retaining reliable subcontractors and employees
-- Building reliable labour pipelines
-- Scheduling and project management
-- Team culture and retention
-- Scaling the business efficiently
-- Common problems in UK trades businesses
-
-Keep responses concise and practical. If the user asks about booking a call or scheduling, encourage them to book via the link provided in the chat.`
-            },
-            {
-              role: "user",
-              content: message
-            }
+            { role: "system", content: systemPrompt },
+            ...historyMessages,
+            { role: "user", content: message }
           ],
           temperature: 0.7,
-          max_tokens: 500,
+          max_tokens: 600,
         }),
       });
 
@@ -359,7 +422,7 @@ Keep responses concise and practical. If the user asks about booking a call or s
       }
 
       const data = await openaiResponse.json();
-      const aiMessage = data.choices?.[0]?.message?.content;
+      let aiMessage = data.choices?.[0]?.message?.content || "";
 
       if (!aiMessage) {
         return res.status(500).json({
@@ -367,11 +430,48 @@ Keep responses concise and practical. If the user asks about booking a call or s
         });
       }
 
-      console.log("[API] ✅ AI response generated successfully");
+      // Parse diagnostic data from response if present
+      let diagnosticUpdate = null;
+      let isComplete = false;
+
+      const diagnosticMatch = aiMessage.match(/<!--DIAGNOSTIC_DATA:(.*?)-->/);
+      if (diagnosticMatch) {
+        try {
+          diagnosticUpdate = JSON.parse(diagnosticMatch[1]);
+          aiMessage = aiMessage.replace(/<!--DIAGNOSTIC_DATA:.*?-->/g, '').trim();
+        } catch (e) {
+          console.error("[API] Failed to parse diagnostic data:", e);
+        }
+      }
+
+      const completeMatch = aiMessage.match(/<!--DIAGNOSTIC_COMPLETE:true-->/);
+      if (completeMatch) {
+        isComplete = true;
+        aiMessage = aiMessage.replace(/<!--DIAGNOSTIC_COMPLETE:true-->/g, '').trim();
+      }
+
+      // Auto-increment questionsAsked if in diagnostic mode and no diagnosticUpdate provided
+      if (isDiagnosticMode && !diagnosticUpdate) {
+        diagnosticUpdate = {
+          questionsAsked: questionsAsked + 1,
+          collectedData: {},
+        };
+      }
+
+      // Force completion if we've reached 7 questions
+      const newQuestionsCount = diagnosticUpdate?.questionsAsked || questionsAsked + 1;
+      if (isDiagnosticMode && newQuestionsCount >= 7 && !isComplete) {
+        console.log("[API] Auto-completing diagnostic after 7 questions");
+        isComplete = true;
+      }
+
+      console.log("[API] ✅ AI response generated successfully, questionsAsked:", newQuestionsCount, "isComplete:", isComplete);
 
       res.json({
         success: true,
         message: aiMessage,
+        diagnosticUpdate,
+        isComplete,
       });
     } catch (error) {
       console.error("[API] Error in chat:", error);

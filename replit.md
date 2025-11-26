@@ -127,12 +127,30 @@ Preferred communication style: Simple, everyday language.
 
 ### Key Design Decisions
 
-**Diagnostic Flow**
-- Conversational UI using custom chat interface (not ChatGPT SDK despite project brief)
-- Widget-based result display (score cards, progress bars, badges)
-- Seven-question assessment covering trading capacity, reliability, retention, recruitment, onboarding, culture, and systems
-- Real-time score calculation and traffic light visualization
-- Email capture for PDF delivery and CRM integration
+**Diagnostic Flow (GPT-Powered Conversational)**
+- Full ChatGPT-style conversational interface - NO multiple choice options
+- GPT-4o-mini powers both diagnostic questions and free-form conversation
+- AI asks 7 diagnostic questions naturally based on conversation flow
+- AI interprets free-text responses and extracts scores conversationally
+- Backend tracks diagnostic state: `questionsAsked`, `collectedData`, `isActive`
+- Hidden JSON markers in AI responses track progress: `<!--DIAGNOSTIC_DATA:...-->`
+- Conversation continues intelligently post-lead capture
+
+**Diagnostic Areas Covered**
+1. Trading Capacity - Project volume and workload management
+2. Reliability - Subbie punctuality, no-shows, work completion
+3. Recruitment - Difficulty finding skilled labour, pipeline strength
+4. Systems - Scheduling tools, project management, organization
+5. Time Spent - Hours wasted on labour issues weekly
+6. Biggest Challenge - Main pain point with labour
+7. Culture - Team morale, turnover, engagement
+
+**Post-Diagnostic Flow**
+1. Score widget displayed with traffic light visualization
+2. Email form for PDF report generation
+3. Phone form for SMS training link (via GHL)
+4. Inline calendar booking widget (https://link.flow-build.com/widget/bookings/thefreedomroadmap)
+5. Google Reviews carousel (9 real reviews from UK builders)
 
 **Scoring System**
 - 0-100 overall score derived from section scores
@@ -142,7 +160,13 @@ Preferred communication style: Simple, everyday language.
 - Actionable recommendations prioritized by business impact
 
 **Technology Trade-offs**
-- Chose custom chat UI over ChatGPT SDK for complete control over UX and data flow
+- GPT-4o-mini for fast, cost-effective conversational AI
+- No ChatGPT SDK - full control over UX and data extraction
 - Selected Drizzle ORM over Prisma for lightweight bundle size and edge compatibility
 - md-to-pdf instead of Puppeteer for simpler deployment and fewer dependencies
 - In-memory storage fallback enables development without database provisioning
+
+**UI Components Added**
+- ReviewsCarousel - Horizontal scrollable Google Reviews (9 testimonials)
+- CalendarEmbed - Inline iframe for Flow-Build booking widget
+- Progress indicator during diagnostic mode
