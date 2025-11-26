@@ -310,22 +310,31 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     onSuccess: (response: any) => {
       const aiMessage = response.message;
 
+      console.log('[onSuccess] ═══════════════════════════════════════════════════════════');
+      console.log('[onSuccess] Response received from backend');
+      console.log('[onSuccess] Raw diagnosticUpdate:', JSON.stringify(response.diagnosticUpdate));
+      console.log('[onSuccess] accumulatedDataRef BEFORE merge:', JSON.stringify(accumulatedDataRef.current));
+      console.log('[onSuccess] accumulatedDataRef keys BEFORE:', Object.keys(accumulatedDataRef.current));
+
       // Merge new collected data into the ref (survives across closures)
       if (response.diagnosticUpdate?.collectedData) {
+        const newData = response.diagnosticUpdate.collectedData;
+        console.log('[onSuccess] New data to merge:', JSON.stringify(newData));
+        console.log('[onSuccess] New data keys:', Object.keys(newData));
+        
         accumulatedDataRef.current = {
           ...accumulatedDataRef.current,
-          ...response.diagnosticUpdate.collectedData,
+          ...newData,
         };
-        console.log('[Chat] ✅ Merged collected data:', JSON.stringify(response.diagnosticUpdate.collectedData));
+        console.log('[onSuccess] ✅ After merge - accumulatedDataRef:', JSON.stringify(accumulatedDataRef.current));
+        console.log('[onSuccess] ✅ After merge - keys:', Object.keys(accumulatedDataRef.current));
+      } else {
+        console.log('[onSuccess] ⚠️  No collectedData in diagnosticUpdate!');
       }
 
-      console.log('[Chat] Response received:', {
-        isComplete: response.isComplete,
-        questionsAsked: response.diagnosticUpdate?.questionsAsked,
-        newCollectedData: response.diagnosticUpdate?.collectedData,
-        totalAccumulatedData: accumulatedDataRef.current,
-        hasAnyScores: Object.values(accumulatedDataRef.current).some((v: any) => v?.score !== undefined)
-      });
+      console.log('[onSuccess] isComplete:', response.isComplete);
+      console.log('[onSuccess] questionsAsked:', response.diagnosticUpdate?.questionsAsked);
+      console.log('[onSuccess] ───────────────────────────────────────────────────────────');
       
       if (response.diagnosticUpdate) {
         setDiagnosticState(prev => ({
@@ -451,6 +460,11 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   });
 
   const calculateScoresFromData = (data: Record<string, any>) => {
+    console.log('[calculateScores] ═══════════════════════════════════════════════════════════');
+    console.log('[calculateScores] Input data:', JSON.stringify(data, null, 2));
+    console.log('[calculateScores] Input keys:', Object.keys(data));
+    console.log('[calculateScores] ───────────────────────────────────────────────────────────');
+    
     const defaultScore = 5;
 
     // Map AI-collected data keys to our display categories
@@ -593,6 +607,14 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
       collectedData: { ...accumulatedDataRef.current },
     };
 
+    console.log('[handleSend] ═══════════════════════════════════════════════════════════');
+    console.log('[handleSend] Sending message:', userMessage.substring(0, 40) + '...');
+    console.log('[handleSend] accumulatedDataRef BEFORE send:', JSON.stringify(accumulatedDataRef.current));
+    console.log('[handleSend] accumulatedDataRef keys:', Object.keys(accumulatedDataRef.current));
+    console.log('[handleSend] diagnosticState.questionsAsked:', diagnosticState.questionsAsked);
+    console.log('[handleSend] Payload to send:', JSON.stringify(currentDiagnosticState, null, 2));
+    console.log('[handleSend] ───────────────────────────────────────────────────────────');
+
     chatMutation.mutate({
       message: userMessage,
       conversationHistory,
@@ -619,7 +641,16 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     setStoredEmail(email.toLowerCase());
     setMessages(prev => [...prev, { role: "user", content: `${firstName} ${lastName} - ${email}` }]);
 
+    console.log('[emailSubmit] ═══════════════════════════════════════════════════════════');
+    console.log('[emailSubmit] Submitting email:', email);
+    console.log('[emailSubmit] diagnosticData (cached):', JSON.stringify(diagnosticData));
+    console.log('[emailSubmit] diagnosticState.collectedData:', JSON.stringify(diagnosticState.collectedData));
+    console.log('[emailSubmit] accumulatedDataRef:', JSON.stringify(accumulatedDataRef.current));
+    
     const scores = diagnosticData || calculateScoresFromData(diagnosticState.collectedData);
+    console.log('[emailSubmit] Scores to send:', JSON.stringify(scores));
+    console.log('[emailSubmit] ───────────────────────────────────────────────────────────');
+    
     submitEmailMutation.mutate({
       email: email.toLowerCase(),
       firstName,

@@ -320,8 +320,12 @@ Your bonus pack reveals the exact system successful builders use.
 
       const { message, conversationHistory = [], diagnosticState } = validationResult.data;
 
+      console.log("[API] ═══════════════════════════════════════════════════════════════");
       console.log("[API] Processing chat message:", message.substring(0, 50) + "...");
-      console.log("[API] Diagnostic state:", diagnosticState);
+      console.log("[API] Incoming diagnosticState:", JSON.stringify(diagnosticState, null, 2));
+      console.log("[API] Questions asked so far:", diagnosticState?.questionsAsked);
+      console.log("[API] Collected data keys received:", Object.keys(diagnosticState?.collectedData || {}));
+      console.log("[API] ───────────────────────────────────────────────────────────────");
 
       // Build conversation history for context
       const historyMessages = conversationHistory.slice(-10).map(msg => ({
@@ -523,7 +527,12 @@ Keep responses concise (2-4 sentences). Be conversational, not formal.`;
         isComplete = true;
       }
 
-      console.log("[API] ✅ AI response generated successfully, questionsAsked:", newQuestionsCount, "isComplete:", isComplete);
+      console.log("[API] ═══════════════════════════════════════════════════════════════");
+      console.log("[API] ✅ AI response generated successfully");
+      console.log("[API] Outgoing questionsAsked:", newQuestionsCount);
+      console.log("[API] Outgoing diagnosticUpdate:", JSON.stringify(diagnosticUpdate, null, 2));
+      console.log("[API] isComplete:", isComplete);
+      console.log("[API] ═══════════════════════════════════════════════════════════════");
 
       res.json({
         success: true,
