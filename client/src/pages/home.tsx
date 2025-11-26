@@ -4,6 +4,8 @@ import { Sparkles } from "lucide-react";
 import DiagnosticChat from "@/components/diagnostic-chat";
 import CalendarPopup from "@/components/calendar-popup";
 import { useState, useRef } from "react";
+import videoThumbnail from "@assets/Gemini_Generated_Image_yiac8xyiac8xyiac_1764129756943.png";
+import introVideo from "@assets/Video landing page_1764129756948.mp4";
 
 export default function Home() {
   const [showCalendar, setShowCalendar] = useState(false);
@@ -66,34 +68,51 @@ export default function Home() {
         {/* Hero Section - Headline & Subheadline Only */}
         <section className="text-center max-w-4xl mx-auto mb-8">
           {/* Main Headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight tracking-tight">
-            <span className="block mb-2 text-brand-dark-navy">
-              Discover Where Your
-            </span>
-            <span className="block text-brand-vivid-blue">
-              Labour Pipeline is Leaking
-            </span>
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight tracking-tight text-brand-dark-navy">
+            Why The Top 1% Of Trades Are Ignoring Your Business (And How To Fix It)
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto font-medium leading-relaxed">
-            Find the exact gaps <span className="text-brand-dark-navy font-bold">potentially costing you up to £100K per year</span>
+          <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto font-medium leading-relaxed">
+            The "labour shortage" isn't the whole story. Use our <span className="text-brand-vivid-blue font-bold">A-Team Diagnostic</span> to pinpoint the leaks in your hiring process so you can stop chasing workers and start attracting them.
           </p>
         </section>
 
-        {/* Video Placeholder Section */}
-        <section className="max-w-5xl mx-auto mb-12">
-          <div className="aspect-video bg-gradient-to-br from-gray-200 to-gray-100 rounded-xl border-2 border-gray-300 flex items-center justify-center shadow-lg">
-            <div className="text-center">
-              <div className="w-20 h-20 bg-brand-vivid-blue rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <svg className="w-10 h-10 text-white fill-current" viewBox="0 0 24 24">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              </div>
-              <p className="text-gray-700 font-semibold text-lg">Watch Our Introduction</p>
-              <p className="text-gray-500 text-sm mt-2">See how builders are fixing their labour pipeline</p>
-            </div>
+        {/* Video Section */}
+        <section className="max-w-5xl mx-auto mb-6">
+          <div className="aspect-video rounded-xl overflow-hidden border-2 border-gray-300 shadow-lg relative group cursor-pointer" onClick={() => {
+            const video = document.getElementById('intro-video') as HTMLVideoElement;
+            const thumbnail = document.getElementById('video-thumbnail') as HTMLElement;
+            if (video && thumbnail) {
+              thumbnail.style.display = 'none';
+              video.style.display = 'block';
+              video.play();
+            }
+          }}>
+            <img 
+              id="video-thumbnail"
+              src={videoThumbnail} 
+              alt="Stop Panic Hiring - Video Thumbnail"
+              className="w-full h-full object-cover"
+            />
+            <video 
+              id="intro-video"
+              className="w-full h-full object-cover hidden"
+              controls
+              preload="metadata"
+              src={introVideo}
+            />
           </div>
+        </section>
+
+        {/* Text Under Video */}
+        <section className="text-center max-w-4xl mx-auto mb-12">
+          <h2 className="text-2xl md:text-3xl font-bold text-brand-dark-navy mb-3">
+            Find Out Exactly Why You Can't Find And Attract Good Trades
+          </h2>
+          <p className="text-lg text-gray-600">
+            Interact with the AI below to identify your hiring bottlenecks in under 2 minutes.
+          </p>
         </section>
 
         {/* Embedded Chat - Always Visible */}
@@ -172,7 +191,7 @@ export default function Home() {
       <section className="relative z-10 py-16 bg-white">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-3">Book Your Free Strategy Session</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-3">Book Your Free Scale Session</h2>
             <p className="text-gray-600 text-lg">Discover how to fix your labour pipeline and scale your business</p>
           </div>
           <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
