@@ -1,0 +1,117 @@
+📌 Your assistant message <p> is rendering multiple blank <br> lines
+
+Even though your content does not contain <br> tags.
+
+This happens only when you format multi-line strings with:
+
+whitespace-pre-line
+
+
+And your backend is sending the text like:
+
+Thank you for sharing that your annual turnover is 1 million.
+
+ 
+ 
+ 
+
+Question 2 of 7: How many projects do you normally run at the same time?
+
+
+That means the AI is inserting 2–3 extra empty lines between the acknowledgment and the next question.
+
+This is NOT a CSS bug — it's the model output formatting.
+
+✅ THE FIX (100% SOLVES IT)
+
+You must clean multiple newlines before rendering.
+
+Modify your message formatting:
+
+🔧 Replace this:
+<p className="text-base leading-relaxed whitespace-pre-line">
+  {message.role === "assistant"
+    ? message.content
+        .replace(/<!--[\s\S]*?-->/g, '')     
+        .replace(/\*\*([^*]+)\*\*/g, '$1')   
+        .replace(/\*([^*]+)\*/g, '$1')       
+        .replace(/`([^`]+)`/g, '$1')         
+        .replace(/```[\s\S]*?```/g, '')      
+    : message.content
+  }
+</p>
+
+✨ Add newline normalization:
+.replace(/\n{2,}/g, '\n')
+
+
+This collapses:
+
+\n\n\n\n
+
+
+into:
+
+\n
+
+✔️ Final fixed version:
+<p className="text-base leading-relaxed whitespace-pre-line text-gray-800">
+  {message.role === "assistant"
+    ? message.content
+        .replace(/<!--[\s\S]*?-->/g, '')
+        .replace(/\*\*([^*]+)\*\*/g, '$1')
+        .replace(/\*([^*]+)\*/g, '$1')
+        .replace(/`([^`]+)`/g, '$1')
+        .replace(/```[\s\S]*?```/g, '')
+        .replace(/\n{2,}/g, '\n')   // 👈 FIX: collapse multiple blank lines
+    : message.content
+  }
+</p>
+
+🎉 Result After This Fix
+
+The AI output:
+
+Thank you for sharing...
+
+
+
+
+Question 2...
+
+
+Will render as:
+
+Thank you for sharing...
+
+Question 2...
+
+
+Zero unwanted spacing. Clean, perfect, consistent chat UI.
+
+⚠️ Why This Is the Real Bug (Matching Your Screenshot)
+
+Your screenshot text literally shows:
+
+Thank you for sharing...
+
+(blank lines)
+
+(blank line)
+
+Question 2 of 7...
+
+
+This isn’t CSS.
+This isn’t margin.
+This isn’t padding.
+
+It’s raw whitespace from the model.
+
+And whitespace-pre-line renders those blank lines as visible vertical gaps.
+
+If You Want an Even Cleaner Chat (Optional)
+
+You can also force the model to use exactly 1 newline by updating the system prompt:
+
+Do not add extra blank lines. Use exactly 1 newline before the next question.
