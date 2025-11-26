@@ -218,7 +218,7 @@ function CalendarEmbed() {
     <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
       <div className="p-4 bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white">
         <h3 className="text-lg font-bold">Book Your Free Scale Session</h3>
-        <p className="text-sm opacity-90">Choose a time that works for you</p>
+        <p className="text-base font-medium opacity-95">Choose a time that works for you</p>
       </div>
       <div className="h-[500px]">
         <iframe
@@ -235,7 +235,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hey there! I'm Greg from Develop Coaching.\n\nI help UK builders fix their labour pipeline - you know, the headaches with unreliable subbies, recruitment struggles, and the constant firefighting that's probably costing you £20K-£90K a year.\n\nLet's run a quick 3-minute diagnostic to identify exactly where your gaps are. Just type 'start' or tell me a bit about your business to begin!",
+      content: "Hey there! I'm Greg from Develop Coaching.\n\nI help UK builders fix their labour pipeline - you know, the headaches with unreliable subbies, recruitment struggles, and the constant firefighting that's probably costing you up to £100K a year.\n\nLet's run a quick 3-minute diagnostic to identify exactly where your gaps are. Just type 'start' or tell me a bit about your business to begin!",
     },
   ]);
   const [input, setInput] = useState("");
