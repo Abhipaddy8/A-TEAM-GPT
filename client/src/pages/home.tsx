@@ -116,7 +116,7 @@ export default function Home() {
         </section>
 
         {/* Video Section */}
-        <section className="max-w-5xl mx-auto mb-6">
+        <section className="max-w-3xl mx-auto mb-6">
           <div className="aspect-video rounded-xl overflow-hidden border-2 border-gray-300 shadow-lg relative group cursor-pointer" onClick={() => {
             const video = document.getElementById('intro-video') as HTMLVideoElement;
             const thumbnail = document.getElementById('video-thumbnail') as HTMLElement;
@@ -153,7 +153,7 @@ export default function Home() {
         </section>
 
         {/* Embedded Chat - Always Visible */}
-        <div className="max-w-5xl mx-auto mb-16">
+        <div className="max-w-5xl mx-auto mb-8">
           <DiagnosticChat embedded={true} onBookingClick={handleBookingClick} />
         </div>
 
@@ -165,8 +165,26 @@ export default function Home() {
         )}
       </main>
 
-      {/* Google Reviews Section */}
-      <section className="relative z-10 bg-gray-50 py-16 mt-8">
+      {/* Calendar Booking Section - Right after Chat */}
+      <section className="relative z-10 py-12 bg-white">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-3">Book Your Free Scale Session</h2>
+            <p className="text-gray-600 text-lg">Discover how to fix your labour pipeline and scale your business</p>
+          </div>
+          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
+            <iframe
+              src="https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck"
+              className="w-full h-[700px] border-0"
+              title="Book a Strategy Session"
+              data-testid="calendar-embed"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* Google Reviews Section - After Calendar */}
+      <section className="relative z-10 bg-gray-50 py-16">
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-3">
@@ -220,24 +238,6 @@ export default function Home() {
                 </Card>
               ))}
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Calendar Booking Section */}
-      <section className="relative z-10 py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-brand-dark-navy mb-3">Book Your Free Scale Session</h2>
-            <p className="text-gray-600 text-lg">Discover how to fix your labour pipeline and scale your business</p>
-          </div>
-          <div className="rounded-xl overflow-hidden border border-gray-200 shadow-lg">
-            <iframe
-              src="https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck"
-              className="w-full h-[700px] border-0"
-              title="Book a Strategy Session"
-              data-testid="calendar-embed"
-            />
           </div>
         </div>
       </section>
