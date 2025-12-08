@@ -11,41 +11,54 @@ export default function Home() {
   const [showCalendar, setShowCalendar] = useState(false);
   const calendarRef = useRef<HTMLDivElement>(null);
 
-  // Capture UTM parameters on page load
+  // Capture UTM parameters on page load - DEFERRED to not block initial paint
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const params: any = {};
-
-    // Check for existing stored UTMs
-    const storedUtm = sessionStorage.getItem('utm_params');
-    if (storedUtm) {
+    // Defer storage access to avoid blocking render in third-party iframes
+    const timeoutId = setTimeout(() => {
       try {
-        Object.assign(params, JSON.parse(storedUtm));
+        const searchParams = new URLSearchParams(window.location.search);
+        const params: any = {};
+
+        // Check for existing stored UTMs
+        try {
+          const storedUtm = sessionStorage.getItem('utm_params');
+          if (storedUtm) {
+            Object.assign(params, JSON.parse(storedUtm));
+          }
+        } catch (e) {
+          console.warn('[UTM] Storage access blocked or failed:', e);
+        }
+
+        // Extract from URL (takes priority)
+        if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
+        if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
+        if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
+
+        // Store if we have params
+        if (Object.keys(params).length > 0) {
+          try {
+            sessionStorage.setItem('utm_params', JSON.stringify(params));
+            console.log('[UTM] Captured on home page:', params);
+          } catch (e) {
+            console.warn('[UTM] Could not save to storage:', e);
+          }
+
+          // Clean URL (remove UTM params for cleaner appearance)
+          if (searchParams.has('utm_source') || searchParams.has('utm_medium') || searchParams.has('utm_campaign')) {
+            searchParams.delete('utm_source');
+            searchParams.delete('utm_medium');
+            searchParams.delete('utm_campaign');
+            const newUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+            console.log('[UTM] Cleaned URL');
+          }
+        }
       } catch (e) {
-        console.error('[UTM] Failed to parse stored params:', e);
+        console.warn('[UTM] Error during UTM capture:', e);
       }
-    }
+    }, 0);
 
-    // Extract from URL (takes priority)
-    if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
-    if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
-    if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
-
-    // Store if we have params
-    if (Object.keys(params).length > 0) {
-      sessionStorage.setItem('utm_params', JSON.stringify(params));
-      console.log('[UTM] Captured on home page:', params);
-
-      // Clean URL (remove UTM params for cleaner appearance)
-      if (searchParams.has('utm_source') || searchParams.has('utm_medium') || searchParams.has('utm_campaign')) {
-        searchParams.delete('utm_source');
-        searchParams.delete('utm_medium');
-        searchParams.delete('utm_campaign');
-        const newUrl = window.location.pathname + (searchParams.toString() ? '?' + searchParams.toString() : '');
-        window.history.replaceState({}, '', newUrl);
-        console.log('[UTM] Cleaned URL');
-      }
-    }
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Handle scroll ONLY when opening the calendar (not on every interaction)

@@ -280,28 +280,41 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
     }
   }, [messages, embedded]);
 
+  // Load UTM params - DEFERRED to not block initial paint in third-party iframes
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const params: any = {};
-    
-    const storedUtm = sessionStorage.getItem('utm_params');
-    if (storedUtm) {
+    const timeoutId = setTimeout(() => {
       try {
-        const parsed = JSON.parse(storedUtm);
-        Object.assign(params, parsed);
+        const searchParams = new URLSearchParams(window.location.search);
+        const params: any = {};
+        
+        try {
+          const storedUtm = sessionStorage.getItem('utm_params');
+          if (storedUtm) {
+            const parsed = JSON.parse(storedUtm);
+            Object.assign(params, parsed);
+          }
+        } catch (e) {
+          console.warn('[UTM] Storage access blocked or failed:', e);
+        }
+        
+        if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
+        if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
+        if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
+        
+        if (Object.keys(params).length > 0) {
+          try {
+            sessionStorage.setItem('utm_params', JSON.stringify(params));
+          } catch (e) {
+            console.warn('[UTM] Could not save to storage:', e);
+          }
+          setUtmParams(params);
+        }
       } catch (e) {
-        console.error('[UTM] Failed to parse stored params:', e);
+        console.warn('[UTM] Error during UTM load:', e);
       }
-    }
-    
-    if (searchParams.has('utm_source')) params.utmSource = searchParams.get('utm_source');
-    if (searchParams.has('utm_medium')) params.utmMedium = searchParams.get('utm_medium');
-    if (searchParams.has('utm_campaign')) params.utmCampaign = searchParams.get('utm_campaign');
-    
-    if (Object.keys(params).length > 0) {
-      sessionStorage.setItem('utm_params', JSON.stringify(params));
-      setUtmParams(params);
-    }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
   }, []);
 
   const chatMutation = useMutation({
@@ -423,14 +436,14 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
 
   const submitPhoneMutation = useMutation({
     mutationFn: async (data: { phone: string; email: string }) => {
-      const storedUtm = sessionStorage.getItem('utm_params');
       let utmData = {};
-      if (storedUtm) {
-        try {
+      try {
+        const storedUtm = sessionStorage.getItem('utm_params');
+        if (storedUtm) {
           utmData = JSON.parse(storedUtm);
-        } catch (e) {
-          console.error('[UTM] Failed to parse stored params:', e);
         }
+      } catch (e) {
+        console.warn('[UTM] Storage access blocked or failed:', e);
       }
       
       const res = await apiRequest("POST", "/api/submit-phone", {
