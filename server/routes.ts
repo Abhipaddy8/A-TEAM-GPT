@@ -524,10 +524,10 @@ Do NOT use markdown formatting like **bold**, *italics*, or numbered lists. Use 
         };
       }
 
-      // Force completion if we've reached 7 questions
+      // Force completion if we've answered all 7 questions (count goes to 8 after Q7 answer)
       const newQuestionsCount = diagnosticUpdate?.questionsAsked || questionsAsked + 1;
-      if (isDiagnosticMode && newQuestionsCount >= 7 && !isComplete) {
-        console.log("[API] Auto-completing diagnostic after 7 questions");
+      if (isDiagnosticMode && newQuestionsCount > 7 && !isComplete) {
+        console.log("[API] Auto-completing diagnostic after all 7 questions answered");
         isComplete = true;
       }
 
