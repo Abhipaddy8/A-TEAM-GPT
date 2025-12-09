@@ -953,7 +953,33 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
 
                 {message.widget === "calendar" && (
                   <div className="mt-4">
-                    <CalendarEmbed />
+                    {embedded ? (
+                      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="p-4 bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white">
+                          <h3 className="text-lg font-bold">Book Your Free Scale Session</h3>
+                          <p className="text-base font-medium opacity-95">Choose a time that works for you</p>
+                        </div>
+                        <div className="p-6 text-center">
+                          <p className="text-gray-600 mb-4">Click below to open the booking calendar in a new window</p>
+                          <Button
+                            onClick={() => {
+                              if (onBookingClick) {
+                                onBookingClick();
+                              } else {
+                                window.open("https://link.flow-build.com/widget/booking/zXUkPVoGKzRyirwYa0Ck", "_blank");
+                              }
+                            }}
+                            className="bg-gradient-to-r from-brand-vivid-blue to-brand-sky-blue text-white font-semibold px-8 py-6"
+                            data-testid="button-open-calendar"
+                          >
+                            <Target className="h-5 w-5 mr-2" />
+                            Open Booking Calendar
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <CalendarEmbed />
+                    )}
                   </div>
                 )}
               </div>
@@ -995,7 +1021,7 @@ export default function DiagnosticChat({ onBack, embedded = false, onBookingClic
         </form>
       </Card>
 
-      {showCalendar && (
+      {showCalendar && !embedded && (
         <div className="mt-8">
           <ReviewsCarousel />
         </div>
