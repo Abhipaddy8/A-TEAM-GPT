@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Home from "@/pages/home";
 import EmbedChat from "@/pages/embed-chat";
 import NotFound from "@/pages/not-found";
+import { useEffect } from "react";
+import { clarity } from "react-microsoft-clarity";
 
 function Router() {
   return (
@@ -18,6 +20,10 @@ function Router() {
 }
 
 function App() {
+  useEffect(() => {
+    clarity.init("9izd804cl6");
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
